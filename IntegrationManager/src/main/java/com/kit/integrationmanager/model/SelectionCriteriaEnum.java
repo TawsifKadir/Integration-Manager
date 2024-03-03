@@ -73,4 +73,13 @@ public enum SelectionCriteriaEnum {
         }
         return null;
     }
+
+    public static String[] getArray() {
+        SelectionCriteriaEnum[] values = SelectionCriteriaEnum.values();
+        String[] array = new String[values.length];
+        for (int i = 0; i < values.length; i++) {
+            array[i] = values[i].getValue();
+        }
+        return array;
+    }
 }

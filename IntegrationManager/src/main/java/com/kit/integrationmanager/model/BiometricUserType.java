@@ -59,4 +59,13 @@ public enum BiometricUserType {
         return null;
     }
 
+    public static String[] getArray() {
+        BiometricUserType[] values = BiometricUserType.values();
+        String[] array = new String[values.length];
+        for (int i = 0; i < values.length; i++) {
+            array[i] = values[i].getValue();
+        }
+        return array;
+    }
+
 }

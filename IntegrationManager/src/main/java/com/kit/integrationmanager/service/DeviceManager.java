@@ -17,7 +17,6 @@ public class DeviceManager {
     private Context mContext = null;
     private boolean isConnected = false;
     private  boolean unmetered = false;
-<<<<<<< HEAD
     private Object syncObject = new Object();
     private String TAG = "Device Manager";
     private ConnectivityManager connectivityManager = null;
@@ -73,24 +72,6 @@ public class DeviceManager {
 
         myInst.setContext(context);
         return myInst;
-=======
-    private static Object syncObject = new Object();
-    private String TAG = "Device Manager";
-
-
-    public static DeviceManager getInstance(Context context){
-
-        synchronized (syncObject) {
-            if (context == null) return null;
-
-            if (myInst == null) {
-                myInst = new DeviceManager();
-            }
-        }
-        myInst.setContext(context);
-        return myInst;
-
->>>>>>> 7d840387b3de2ae686bace5641c668547d87af06
     }
 
     public boolean isOnline(){

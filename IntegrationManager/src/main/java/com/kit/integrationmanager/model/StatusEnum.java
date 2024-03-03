@@ -64,4 +64,13 @@ public enum StatusEnum {
         }
         return null;
     }
+
+    public static String[] getArray() {
+        StatusEnum[] values = StatusEnum.values();
+        String[] array = new String[values.length];
+        for (int i = 0; i < values.length; i++) {
+            array[i] = values[i].getValue();
+        }
+        return array;
+    }
 }
