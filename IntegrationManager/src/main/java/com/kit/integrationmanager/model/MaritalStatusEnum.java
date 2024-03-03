@@ -19,6 +19,7 @@ public enum MaritalStatusEnum {
 }
  */
 public enum MaritalStatusEnum {
+
     SELECT(1,"Select Marital Status"),
     SINGLE(2,"Single"),
     MARRIED(3,"Married"),

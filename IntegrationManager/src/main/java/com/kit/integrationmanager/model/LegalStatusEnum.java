@@ -18,6 +18,7 @@ public enum LegalStatusEnum {
 }
 */
 public enum LegalStatusEnum {
+
     SELECT(1,"Select Legal Status"),
     HOST(2,"Host"),
     RETURNEE(3,"Returnee"),
@@ -57,6 +58,7 @@ public enum LegalStatusEnum {
         }
         return null;
     }
+
     public static LegalStatusEnum getLegalStatusById(int id){
         LegalStatusEnum[] legalStatusList =  LegalStatusEnum.values();
         for(LegalStatusEnum nowType:legalStatusList){

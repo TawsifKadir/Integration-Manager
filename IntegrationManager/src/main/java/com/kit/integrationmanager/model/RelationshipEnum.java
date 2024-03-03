@@ -28,6 +28,7 @@ public enum RelationshipEnum {
  */
 
 public enum RelationshipEnum {
+
     SELECT(1,"Select Relationship"),
     HOUSEHOLD_HEAD(2,"Household head"),
     SPOUSE(3,"Spouse"),
@@ -57,11 +58,9 @@ public enum RelationshipEnum {
     public void setId(int id) {
         this.id = id;
     }
-
     public String getValue() {
         return value;
     }
-
     public void setValue(String value) {
         this.value = value;
     }
@@ -85,5 +84,4 @@ public enum RelationshipEnum {
         }
         return null;
     }
-
 }

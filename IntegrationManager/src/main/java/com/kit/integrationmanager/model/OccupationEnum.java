@@ -10,7 +10,7 @@ package com.kit.integrationmanager.model;
  * @author anwar
  */
 public enum OccupationEnum {
-    
+
     FORMAL_JOB(1,"Formal Job"),
     CASUAL_WORK(2,"Casual Work"),
     SELF_EMPLOYED(3,"Self Employed"),

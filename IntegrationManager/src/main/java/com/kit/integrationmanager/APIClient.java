@@ -29,7 +29,6 @@ public class APIClient {
 
     public static APIClient getInstance() throws Exception{
 
-
         if(apiClient==null){
             apiClient = new APIClient();
         }

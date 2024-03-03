@@ -16,6 +16,7 @@ public enum SelectionCriteriaEnum {
 }
 */
 public enum SelectionCriteriaEnum {
+
     SELECT(1,"Select Selection Criteria","Select Selection Criteria"),
     LIPW(2,"LIPW","LIPW"),
     DIS(3,"DIS","DIS");
@@ -72,5 +73,4 @@ public enum SelectionCriteriaEnum {
         }
         return null;
     }
-
 }

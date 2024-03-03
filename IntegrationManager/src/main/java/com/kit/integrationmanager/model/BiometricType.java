@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public enum BiometricType {
+
     PHOTO(1,"Photo"),
     LT(2,"Left Thumb"),
     LI(3,"Left Index"),

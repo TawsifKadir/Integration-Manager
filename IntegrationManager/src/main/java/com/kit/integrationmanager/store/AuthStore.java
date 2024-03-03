@@ -21,6 +21,11 @@ public class AuthStore {
     private String deviceId = null;
     private Context mContext = null;
 
+<<<<<<< HEAD
+=======
+    private static Object syncObject = new Object();
+
+>>>>>>> 7d840387b3de2ae686bace5641c668547d87af06
     private String TAG = "AuthStore";
 
     private AuthStore() {
@@ -28,9 +33,17 @@ public class AuthStore {
     }
 
     public static AuthStore getInstance(Context context){
+<<<<<<< HEAD
         if(myInst==null){
             myInst = new AuthStore();
             myInst.setContext(context);
+=======
+        synchronized (syncObject) {
+            if (myInst == null) {
+                myInst = new AuthStore();
+                myInst.setContext(context);
+            }
+>>>>>>> 7d840387b3de2ae686bace5641c668547d87af06
         }
         return myInst;
     }

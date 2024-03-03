@@ -18,6 +18,7 @@ public enum CurrencyEnum {
 }
 */
 public enum CurrencyEnum {
+
     SELECT(1,"Select Currency"),
     SUDANESE_POUND(2,"Sudanese pound"),
     USD(3,"Usd"),
@@ -57,6 +58,7 @@ public enum CurrencyEnum {
         }
         return null;
     }
+
     public static CurrencyEnum getCurrencyById(int id){
         CurrencyEnum[] currencyList =  CurrencyEnum.values();
         for(CurrencyEnum nowType:currencyList){

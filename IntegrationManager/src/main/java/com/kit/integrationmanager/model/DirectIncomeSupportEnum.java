@@ -16,6 +16,7 @@ public enum GenderEnum {
 }
  */
 public enum DirectIncomeSupportEnum {
+
     NO_ALTERNATE_INCOME_SUPPORT(1,"Child headed households with no alternate income support"),
     LACKING_ALTERNATE_INCOME_SUPPORT(2,"Elderly headed household lacking alternate income support and able bodied member"),
     PERSON_WITH_DISABILITY_LACKING_ALTERNATE_INCOME_SUPPORT(3,"Persons with disability headed household lacking alternate income support and able bodied member"),
@@ -55,6 +56,7 @@ public enum DirectIncomeSupportEnum {
         }
         return null;
     }
+
     public static DirectIncomeSupportEnum getDirectSupportById(int id){
         DirectIncomeSupportEnum[] directSupportList =  DirectIncomeSupportEnum.values();
         for(DirectIncomeSupportEnum nowType:directSupportList){
@@ -64,5 +66,4 @@ public enum DirectIncomeSupportEnum {
         }
         return null;
     }
-
 }

@@ -35,6 +35,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public enum NonPerticipationReasonEnum {
+
     SELECT(1,"Select Non Participation Reason"),
     REASON_1(2,"All other eligible household members have other commitments that occupy their time"),
     REASON_2(3,"I am uncertain about the ability of the other household members to comply with the program's expectations or conditions"),

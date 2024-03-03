@@ -1,6 +1,7 @@
 package com.kit.integrationmanager.model;
 
 public enum BiometricUserType {
+
     BENEFICIARY(1,"BENEFICIARY","BENEFICIARY"),
     NOMINEE(2,"NOMINEE","NOMINEE"),
     ALTERNATE(3,"ALTERNATE","ALTERNATE");

@@ -1,6 +1,7 @@
 package com.kit.integrationmanager.model;
 
 public enum DocumentTypeEnum {
+
     PASSPORT(1,"Passport","Passport"),
     NATIONAL_ID(2,"National Id","National Id"),
     OTHER(3,"Other",""),

@@ -68,5 +68,4 @@ public enum AfisStatusEnum {
         return null;
     }
 
-
 }
