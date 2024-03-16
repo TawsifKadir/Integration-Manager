@@ -51,6 +51,8 @@ public class AuthStore {
             Log.e(TAG,"Error while parsing json data");
             jsonException.printStackTrace();
             return null;
+        }catch (Exception exc){
+
         }
         return login;
     }

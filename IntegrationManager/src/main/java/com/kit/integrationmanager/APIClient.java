@@ -2,10 +2,15 @@ package com.kit.integrationmanager;
 
 import android.util.Log;
 
+import androidx.annotation.NonNull;
+
 import com.kit.integrationmanager.model.ServerInfo;
+//import com.moczul.ok2curl.CurlInterceptor;
+//import com.moczul.ok2curl.logger.Logger;
 
 import lombok.Getter;
 import lombok.Setter;
+import lombok.extern.flogger.Flogger;
 import okhttp3.OkHttpClient;
 import okhttp3.logging.HttpLoggingInterceptor;
 import retrofit2.Retrofit;
@@ -56,7 +61,17 @@ public class APIClient {
             if (this.retrofit == null) {
                 HttpLoggingInterceptor interceptor = new HttpLoggingInterceptor();
                 interceptor.setLevel(HttpLoggingInterceptor.Level.BODY);
+
                 OkHttpClient client = new OkHttpClient.Builder().addInterceptor(interceptor).build();
+
+//                com.moczul.ok2curl.logger.Logger nowLogger = new Logger() {
+//                    @Override
+//                    public void log(@NonNull String s) {
+//                        Log.v("Ok2Curl", s);
+//                    }
+//                };
+//                CurlInterceptor curlInterceptor = new CurlInterceptor(nowLogger);
+//                OkHttpClient client = new OkHttpClient.Builder().addInterceptor(curlInterceptor).build();
                 String server_url = apiClient.getServerInfo().getProtocol() + "://" + apiClient.getServerInfo().getHost_name() + ":" + apiClient.getServerInfo().getPort() + "/";
                 this.retrofit = new Retrofit.Builder().baseUrl(server_url).addConverterFactory(GsonConverterFactory.create()).client(client).build();
                 apiClient.setRetrofit(this.retrofit);
