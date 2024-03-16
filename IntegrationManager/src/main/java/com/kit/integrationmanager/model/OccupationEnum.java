@@ -11,6 +11,7 @@ package com.kit.integrationmanager.model;
  */
 public enum OccupationEnum {
 
+    SELECT(0,"Select an Occupation"),
     FORMAL_JOB(1,"Formal Job"),
     CASUAL_WORK(2,"Casual Work"),
     SELF_EMPLOYED(3,"Self Employed"),

@@ -29,7 +29,7 @@ public enum NoFingerprintReasonEnum {
     NoLeftHand(3, "Missing Left Hand"),
     NoRightHand(4, "Missing Right Hand"),
     NoBothHand(5, "Missing Both Hand"),
-    Other(6, "Other (Specify)");
+    Other(6, "Other");
 
     private final int id;
     private final String value;
@@ -62,11 +62,18 @@ public enum NoFingerprintReasonEnum {
     }
 
     public static NoFingerprintReasonEnum find(String value) {
-        for (NoFingerprintReasonEnum reason : NoFingerprintReasonEnum.values()) {
+
+        if(value.equalsIgnoreCase("NoFingerprintImpression")) return NoFingerprintImpression;
+        else if(value.equalsIgnoreCase("NoFinger")) return NoFinger;
+        else if(value.equalsIgnoreCase("NoLeftHand")) return NoLeftHand;
+        else if(value.equalsIgnoreCase("NoRightHand")) return NoRightHand;
+        else if(value.equalsIgnoreCase("NoBothHand")) return NoBothHand;
+        else if(value.equalsIgnoreCase("Other")) return Other;
+        /*for (NoFingerprintReasonEnum reason : NoFingerprintReasonEnum.values()) {
             if (reason.getValue().equals(value)) {
                 return reason;
             }
-        }
+        }*/
         return null;
     }
 

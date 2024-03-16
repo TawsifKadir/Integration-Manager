@@ -16,6 +16,7 @@ public class Nominee {
     private OccupationEnum nomineeOccupation = null;
     private String otherOccupation = null;
     private RelationshipEnum relationshipWithHouseholdHead = null;
+    private String relationshipOther = null;
     private Boolean isReadWrite = false;
     List<Biometric> biometrics = null;
 }

@@ -17,6 +17,7 @@ public class Beneficiary {
     private String spouseLastName;
     private String spouseNickName;
     private RelationshipEnum relationshipWithHouseholdHead;
+    private String relationshipOther;
     private Integer respondentAge;
     private GenderEnum respondentGender;
     private MaritalStatusEnum respondentMaritalStatus;
@@ -26,6 +27,7 @@ public class Beneficiary {
     private String respondentId;
     private String respondentPhoneNo;
     private IncomeSourceEnum householdIncomeSource;
+    private String incomeSourceOther;
     private Integer householdMonthlyAvgIncome;
     private CurrencyEnum currency;
     private SelectionCriteriaEnum selectionCriteria;
@@ -45,9 +47,7 @@ public class Beneficiary {
     private Boolean isOtherMemberPerticipating;
 
     private NonPerticipationReasonEnum notPerticipationReason;
-
     private String notPerticipationOtherReason;
-
     private List<Nominee> nominees;
 
     private List<Biometric> biometrics;

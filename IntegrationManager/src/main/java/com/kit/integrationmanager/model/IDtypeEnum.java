@@ -18,7 +18,7 @@ public enum GenderEnum {
 public enum IDtypeEnum {
     SELECT(1,"Select ID Type"),
     PASSPORT(2,"Passport"),
-    NATIONAL_ID(3,"National ID"),
+    NATIONAL_ID(3,"National Id"),
     OTHERS(4,"Other");
 
     private final String value;

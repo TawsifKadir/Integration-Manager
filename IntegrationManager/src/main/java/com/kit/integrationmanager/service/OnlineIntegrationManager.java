@@ -4,6 +4,8 @@ package com.kit.integrationmanager.service;
 import android.content.Context;
 import android.util.Log;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.kit.integrationmanager.APIClient;
 import com.kit.integrationmanager.APIInterface;
 
@@ -125,6 +127,24 @@ public class OnlineIntegrationManager extends Observable implements IntegrationM
     public void syncRecord(Beneficiary beneficiary, HashMap<String,String> headers) throws Exception{
 
         Beneficiary mBeneficiary = beneficiary;
+
+        if(true){
+            String data = null;
+            try {
+                ObjectMapper mapper = new ObjectMapper();
+                data = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(mBeneficiary);
+                Log.d(TAG,"Request size is "+data.length());
+                Log.d(TAG,"======================================================================");
+                Log.d(TAG,data);
+                Log.d(TAG,"======================================================================");
+            }catch(JsonProcessingException jsonException){
+                Log.e(TAG,jsonException.getMessage());
+                jsonException.printStackTrace();
+            }catch(Throwable t){
+                Log.e(TAG,"Error Occurred");
+                t.printStackTrace();
+            }
+        }
 
         apiInterface = null;
         try {
