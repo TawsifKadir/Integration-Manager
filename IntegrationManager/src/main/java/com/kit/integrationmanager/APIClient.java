@@ -105,14 +105,25 @@ public class APIClient {
 
                 String server_url = apiClient.getServerInfo().getProtocol() + "://" + apiClient.getServerInfo().getHost_name() + ":" + apiClient.getServerInfo().getPort() + "/";
 
-                OkHttpClient httpClient = new OkHttpClient.Builder()
-                        .connectTimeout(DEFAULT_CONNECT_TIMEOUT, TimeUnit.SECONDS)
-                        .writeTimeout(DEFAULT_WRITE_TIMEOUT, TimeUnit.SECONDS)
-                        .readTimeout(DEFAULT_READ_TIMEOUT, TimeUnit.SECONDS)
-                        .addInterceptor(timeoutInterceptor)
-                        .addInterceptor(logInterceptor)
-                        .build();
 
+                OkHttpClient httpClient = null;
+
+                if(BuildConfig.isDebug) {
+                    httpClient = new OkHttpClient.Builder()
+                            .connectTimeout(DEFAULT_CONNECT_TIMEOUT, TimeUnit.SECONDS)
+                            .writeTimeout(DEFAULT_WRITE_TIMEOUT, TimeUnit.SECONDS)
+                            .readTimeout(DEFAULT_READ_TIMEOUT, TimeUnit.SECONDS)
+                            .addInterceptor(timeoutInterceptor)
+                            .addInterceptor(logInterceptor)
+                            .build();
+                }else{
+                    httpClient = new OkHttpClient.Builder()
+                            .connectTimeout(DEFAULT_CONNECT_TIMEOUT, TimeUnit.SECONDS)
+                            .writeTimeout(DEFAULT_WRITE_TIMEOUT, TimeUnit.SECONDS)
+                            .readTimeout(DEFAULT_READ_TIMEOUT, TimeUnit.SECONDS)
+                            .addInterceptor(timeoutInterceptor)
+                            .build();
+                }
 
                  this.retrofit = new Retrofit.Builder()
                         .baseUrl(server_url)

@@ -5,6 +5,7 @@ import android.util.Log;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.kit.integrationmanager.BuildConfig;
 import com.kit.integrationmanager.model.Login;
 
 import java.io.BufferedReader;
@@ -41,7 +42,9 @@ public class AuthStore {
 
         String data = readFromCache();
         if(data==null){
-            Log.e(TAG,"Null data read from cache");
+
+                Log.e(TAG, "Null data read from cache");
+
             return null;
         }
         ObjectMapper mapper = new ObjectMapper();
