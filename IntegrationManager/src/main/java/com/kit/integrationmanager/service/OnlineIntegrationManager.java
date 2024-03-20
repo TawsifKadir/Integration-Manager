@@ -64,6 +64,17 @@ public class OnlineIntegrationManager extends Observable implements IntegrationM
                 ));
                 return;
             }
+
+            if(beneficiaries==null || beneficiaries.isEmpty()){
+                Log.d(TAG,"Error: empty beneficiary list provided.");
+                mObserver.update(OnlineIntegrationManager.this,prepareRegistrationResult(
+                        RegistrationStatus.FAILED,
+                        10,
+                        "Empty beneficiary list provided.",
+                        null
+                ));
+            }
+
             apiInterface = APIClient.getInstance().setServerInfo(mServerInfo).getRetrofit().create(APIInterface.class);
         }catch(Exception exc){
             exc.printStackTrace();
@@ -89,7 +100,7 @@ public class OnlineIntegrationManager extends Observable implements IntegrationM
                                 "",
                                 response.body().getApplicationIds()
                         ));
-                    } catch (Exception exc) {
+                    } catch (Throwable exc) {
                         Log.e(TAG, "Response Error : " + exc.getLocalizedMessage());
                         exc.printStackTrace();
                         mObserver.update(OnlineIntegrationManager.this,prepareRegistrationResult(
@@ -127,25 +138,6 @@ public class OnlineIntegrationManager extends Observable implements IntegrationM
     public void syncRecord(Beneficiary beneficiary, HashMap<String,String> headers) throws Exception{
 
         Beneficiary mBeneficiary = beneficiary;
-
-        if(true){
-            String data = null;
-            try {
-                ObjectMapper mapper = new ObjectMapper();
-                data = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(mBeneficiary);
-                Log.d(TAG,"Request size is "+data.length());
-                Log.d(TAG,"======================================================================");
-                Log.d(TAG,data);
-                Log.d(TAG,"======================================================================");
-            }catch(JsonProcessingException jsonException){
-                Log.e(TAG,jsonException.getMessage());
-                jsonException.printStackTrace();
-            }catch(Throwable t){
-                Log.e(TAG,"Error Occurred");
-                t.printStackTrace();
-            }
-        }
-
         apiInterface = null;
         try {
             if(!DeviceManager.getInstance(mContext).isOnline()){
@@ -157,6 +149,15 @@ public class OnlineIntegrationManager extends Observable implements IntegrationM
                         null
                 ));
                 return;
+            }
+            if(beneficiary==null){
+                Log.d(TAG,"Error: The device is not connetced.");
+                mObserver.update(OnlineIntegrationManager.this,prepareRegistrationResult(
+                        RegistrationStatus.FAILED,
+                        11,
+                        "Beneficiary record null.",
+                        null
+                ));
             }
             apiInterface = APIClient.getInstance().setServerInfo(mServerInfo).getRetrofit().create(APIInterface.class);
         }catch(Exception exc){

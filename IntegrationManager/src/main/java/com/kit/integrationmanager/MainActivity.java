@@ -9,6 +9,7 @@ import android.view.View;
 import android.widget.Button;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.kit.integrationmanager.model.Address;
 import com.kit.integrationmanager.model.Beneficiary;
@@ -69,18 +70,20 @@ public class MainActivity extends AppCompatActivity implements Observer {
             public void onClick(View v) {
                 try {
 
-                    InputStream is = getResources().openRawResource(R.raw.single_reg);
+                    InputStream is = getResources().openRawResource(R.raw.batch_reg);
                     BufferedReader br = new BufferedReader(new InputStreamReader(is, "UTF-8"));
-                    Beneficiary beneficiary = mapper.readValue(br, Beneficiary.class);
+//                    Beneficiary beneficiary = mapper.readValue(br, Beneficiary.class);
+                    ////https://snsopafis.southsudansafetynet.info/afis/swagger-ui.html
+                    List<Beneficiary> beneficiaries = mapper.readValue(br,new TypeReference<List<Beneficiary>>(){});
                     ServerInfo serverInfo = new ServerInfo();
-                    serverInfo.setPort(8090);
-                    serverInfo.setProtocol("http");
-                    serverInfo.setHost_name("snsopafis.karoothitbd.com");
+                    serverInfo.setPort(443);
+                    serverInfo.setProtocol("https");
+                    serverInfo.setHost_name("snsopafis.southsudansafetynet.info");
                     HashMap<String,String> headers = new HashMap<>();
-                    headers.put("Authorization","Bearer eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJmYWthZGlyXzIzIiwiaWF0IjoxNzA4OTM3MjMwLCJleHAiOjE4NjY2MTcyMzB9.erPFSn0XjajCsrqKQ7CnntVqLtASfDKQuzDHuK9SGptwoaYHz0BwE0aspNYyIV_J1brlCXBuKKWKlhAtl5qAHw");
-                    headers.put("DeviceId","47951385-a13f-409a-9a79-c4aaef0e3f9b");
+                    headers.put("Authorization","Bearer eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJzaG92b24iLCJpYXQiOjE3MDg4ODY5OTYsImV4cCI6MTg2NjU2Njk5Nn0.L-75R-EYM1GbrAqj-KdRpWLjxfxCMdVsAboepITEnI2I6AtTUtRhTgQaevzb5GOLWPnGaAUzggcC6SsArnMj-g");
+                    headers.put("DeviceId","d5a58ff3-dc14-4333-8076-72b0fb4cab7a");
                     IntegrationManager integrationManager = new OnlineIntegrationManager(MainActivity.this,MainActivity.this,serverInfo);
-                    integrationManager.syncRecord(beneficiary,headers);
+                    integrationManager.syncRecords(beneficiaries,headers);
                 }catch (Exception ex){
                     Log.e(TAG,"Error while sending data : "+ex.getMessage());
                     ex.printStackTrace();
@@ -224,17 +227,17 @@ public class MainActivity extends AppCompatActivity implements Observer {
                 }
 
                 if(loginResponse.isOperationResult()){
-                     if("ACTIVE".equalsIgnoreCase(loginResponse.getStatus())){
-                         mAuthToken = loginResponse.getToken();
-                         AuthStore.getInstance(MainActivity.this).saveLoginInfoToCache(MainActivity.this.mLogin);
-                         AuthStore.getInstance(MainActivity.this).setAuthToken(mAuthToken);
-                         Log.d(TAG,"Online Authentication Successful");
-                         ////Success - Login the user and go to dashboard
-                     }else if("PENDING".equalsIgnoreCase(loginResponse.getStatus())){
-                         mAuthToken = loginResponse.getToken();
-                         Log.d(TAG,"Received authentication token : "+mAuthToken);
-                         ///User needs to Reset Password
-                     }
+                    if("ACTIVE".equalsIgnoreCase(loginResponse.getStatus())){
+                        mAuthToken = loginResponse.getToken();
+                        AuthStore.getInstance(MainActivity.this).saveLoginInfoToCache(MainActivity.this.mLogin);
+                        AuthStore.getInstance(MainActivity.this).setAuthToken(mAuthToken);
+                        Log.d(TAG,"Online Authentication Successful");
+                        ////Success - Login the user and go to dashboard
+                    }else if("PENDING".equalsIgnoreCase(loginResponse.getStatus())){
+                        mAuthToken = loginResponse.getToken();
+                        Log.d(TAG,"Received authentication token : "+mAuthToken);
+                        ///User needs to Reset Password
+                    }
                 }
                 Log.d(TAG,"Received login request update");
             }else if(arg instanceof ResetPassResponse){

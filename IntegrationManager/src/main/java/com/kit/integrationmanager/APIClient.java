@@ -1,26 +1,72 @@
 package com.kit.integrationmanager;
 
+import android.text.TextUtils;
 import android.util.Log;
 
+import androidx.annotation.NonNull;
+
 import com.kit.integrationmanager.model.ServerInfo;
+//import com.moczul.ok2curl.CurlInterceptor;
+//import com.moczul.ok2curl.logger.Logger;
+
+import java.io.IOException;
+import java.util.concurrent.TimeUnit;
 
 import lombok.Getter;
 import lombok.Setter;
+import lombok.extern.flogger.Flogger;
+import okhttp3.Interceptor;
 import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
 import okhttp3.logging.HttpLoggingInterceptor;
 import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 
 public class APIClient {
+    private static final String CONNECT_TIMEOUT = "CONNECT_TIMEOUT";
+    private static final String READ_TIMEOUT = "READ_TIMEOUT";
+    private static final String WRITE_TIMEOUT = "WRITE_TIMEOUT";
 
+    private int DEFAULT_CONNECT_TIMEOUT = 10;
+    private int DEFAULT_READ_TIMEOUT = 10;
+    private int DEFAULT_WRITE_TIMEOUT = 10;
     private Retrofit retrofit;
-
     private static APIClient apiClient = null;
-
     @Getter
     private ServerInfo serverInfo;
-
     private String TAG = "APICLIENT";
+
+    Interceptor timeoutInterceptor = new Interceptor() {
+        @Override
+        public Response intercept(Chain chain) throws IOException {
+            Request request = chain.request();
+
+            int connectTimeout = chain.connectTimeoutMillis();
+            int readTimeout = chain.readTimeoutMillis();
+            int writeTimeout = chain.writeTimeoutMillis();
+
+            String connectNew = request.header(CONNECT_TIMEOUT);
+            String readNew = request.header(READ_TIMEOUT);
+            String writeNew = request.header(WRITE_TIMEOUT);
+
+            if (!TextUtils.isEmpty(connectNew)) {
+                connectTimeout = Integer.valueOf(connectNew);
+            }
+            if (!TextUtils.isEmpty(readNew)) {
+                readTimeout = Integer.valueOf(readNew);
+            }
+            if (!TextUtils.isEmpty(writeNew)) {
+                writeTimeout = Integer.valueOf(writeNew);
+            }
+
+            return chain
+                    .withConnectTimeout(connectTimeout, TimeUnit.SECONDS)
+                    .withReadTimeout(readTimeout, TimeUnit.SECONDS)
+                    .withWriteTimeout(writeTimeout, TimeUnit.SECONDS)
+                    .proceed(request);
+        }
+    };
 
     public APIClient() {
         this.serverInfo = null;
@@ -54,11 +100,27 @@ public class APIClient {
         ) {
 
             if (this.retrofit == null) {
-                HttpLoggingInterceptor interceptor = new HttpLoggingInterceptor();
-                interceptor.setLevel(HttpLoggingInterceptor.Level.BODY);
-                OkHttpClient client = new OkHttpClient.Builder().addInterceptor(interceptor).build();
+                HttpLoggingInterceptor logInterceptor = new HttpLoggingInterceptor();
+                logInterceptor.setLevel(HttpLoggingInterceptor.Level.BODY);
+
                 String server_url = apiClient.getServerInfo().getProtocol() + "://" + apiClient.getServerInfo().getHost_name() + ":" + apiClient.getServerInfo().getPort() + "/";
-                this.retrofit = new Retrofit.Builder().baseUrl(server_url).addConverterFactory(GsonConverterFactory.create()).client(client).build();
+
+                OkHttpClient httpClient = new OkHttpClient.Builder()
+                        .connectTimeout(DEFAULT_CONNECT_TIMEOUT, TimeUnit.SECONDS)
+                        .writeTimeout(DEFAULT_WRITE_TIMEOUT, TimeUnit.SECONDS)
+                        .readTimeout(DEFAULT_READ_TIMEOUT, TimeUnit.SECONDS)
+                        .addInterceptor(timeoutInterceptor)
+                        .addInterceptor(logInterceptor)
+                        .build();
+
+
+                 this.retrofit = new Retrofit.Builder()
+                        .baseUrl(server_url)
+                        .addConverterFactory(GsonConverterFactory.create())
+                        .client(httpClient)
+                        .build();
+
+
                 apiClient.setRetrofit(this.retrofit);
             }
         }else{
@@ -77,5 +139,27 @@ public class APIClient {
         this.retrofit = retrofit;
     }
 
+    public int getDEFAULT_CONNECT_TIMEOUT() {
+        return DEFAULT_CONNECT_TIMEOUT;
+    }
 
+    public void setDEFAULT_CONNECT_TIMEOUT(int DEFAULT_CONNECT_TIMEOUT) {
+        this.DEFAULT_CONNECT_TIMEOUT = DEFAULT_CONNECT_TIMEOUT;
+    }
+
+    public int getDEFAULT_READ_TIMEOUT() {
+        return DEFAULT_READ_TIMEOUT;
+    }
+
+    public void setDEFAULT_READ_TIMEOUT(int DEFAULT_READ_TIMEOUT) {
+        this.DEFAULT_READ_TIMEOUT = DEFAULT_READ_TIMEOUT;
+    }
+
+    public int getDEFAULT_WRITE_TIMEOUT() {
+        return DEFAULT_WRITE_TIMEOUT;
+    }
+
+    public void setDEFAULT_WRITE_TIMEOUT(int DEFAULT_WRITE_TIMEOUT) {
+        this.DEFAULT_WRITE_TIMEOUT = DEFAULT_WRITE_TIMEOUT;
+    }
 }

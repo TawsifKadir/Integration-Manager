@@ -1,6 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <network-security-config>
     <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="true">snsopafis.southsudansafetynet.info</domain>
         <domain includeSubdomains="true">snsopafis.karoothitbd.com</domain>
     </domain-config>
+    <base-config>
+        <trust-anchors>
+            <certificates src="@raw/snsop"/>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+
 </network-security-config>

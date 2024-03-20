@@ -17,12 +17,15 @@ import retrofit2.Call;
 import retrofit2.http.Body;
 import retrofit2.http.Header;
 import retrofit2.http.HeaderMap;
+import retrofit2.http.Headers;
 import retrofit2.http.POST;
 
 public interface APIInterface {
+    @Headers({"READ_TIMEOUT:120", "WRITE_TIMEOUT:120"})
     @POST("/afis/api/beneficiary/register")
     Call<Void> register(@Body Beneficiary beneficiary, @HeaderMap Map<String, String> headers);
 
+    @Headers({"READ_TIMEOUT:120", "WRITE_TIMEOUT:120"})
     @POST("/afis/api/beneficiary/register/batch")
     Call<BatchRegistrationResponse> registerBatch(@Body BatchRegistrationRequest beneficiaryRequest, @HeaderMap Map<String, String> headers);
 
