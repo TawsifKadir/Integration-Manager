@@ -1,11 +1,16 @@
 package com.kit.integrationmanager.service;
 
 import android.content.Context;
+import android.os.Build;
+import android.os.Looper;
 import android.util.Log;
 
 import com.kit.integrationmanager.APIClient;
 import com.kit.integrationmanager.APIInterface;
+import com.kit.integrationmanager.BuildConfig;
+import com.kit.integrationmanager.model.Login;
 import com.kit.integrationmanager.model.ServerInfo;
+import com.kit.integrationmanager.payload.RegistrationStatus;
 import com.kit.integrationmanager.payload.ResponseHeader;
 import com.kit.integrationmanager.payload.login.request.LoginRequest;
 import com.kit.integrationmanager.payload.login.response.LoginResponse;
@@ -41,106 +46,88 @@ public class LoginServiceImpl extends Observable implements LoginService{
     }
 
     @Override
-    public void doOnlineLogin(LoginRequest loginRequest, HashMap<String, String> headers) {
+    public synchronized LoginResponse doOnlineLogin(LoginRequest loginRequest, HashMap<String, String> headers) {
 
         APIInterface apiInterface = null;
+        boolean isError = false;
+        Throwable errorObject = null;
+        Response<LoginResponse> response = null;
+        LoginResponse lResponse = null;
+        boolean isUiThread = Build.VERSION.SDK_INT >= Build.VERSION_CODES.M
+                ? Looper.getMainLooper().isCurrentThread()
+                : Thread.currentThread() == Looper.getMainLooper().getThread();
+
         try {
-            apiInterface = APIClient.getInstance().setServerInfo(mServerInfo).getRetrofit().create(APIInterface.class);
-        }catch(Exception exc){
-            Log.e(TAG,"Error while creating API Interface. Possibly , Server information is not correct.");
-            exc.printStackTrace();
-
-            mObserver.update(LoginServiceImpl.this,prepareLoginResponse(1,
-                    "Error while creating API Interface. Possibly , Server information is not correct.",
-                    false));
-
-            return;
-        }
-        Call<LoginResponse> call = apiInterface.login(loginRequest,headers);
-        call.enqueue(new Callback<LoginResponse>() {
-            @Override
-            public void onResponse(Call<LoginResponse> call, Response<LoginResponse> response) {
-                if(response.code()==200){
-                    try{
-                        mObserver.update(LoginServiceImpl.this,response.body());
-                    }catch(Exception exc){
-                        Log.e(TAG,"Response Error : "+ exc.getLocalizedMessage());
-                        exc.printStackTrace();
-                        mObserver.update(LoginServiceImpl.this,
-                                prepareLoginResponse(2,
-                                         exc.getLocalizedMessage(),
-                                        false)
-                        );
-                    }
-                }else{
-                    mObserver.update(LoginServiceImpl.this,
-                            prepareLoginResponse(response.code(),
-                                    response.message(),
-                                    false)
-                    );
+            if(isUiThread){
+                lResponse = prepareLoginResponse(8,"Please call this API from non UI thread.",false);
+            }else if(!isValidLoginRequest(loginRequest)){
+                lResponse = prepareLoginResponse(8, "Invalid login request", false);
+            }else {
+                apiInterface = APIClient.getInstance().setServerInfo(mServerInfo).getRetrofit().create(APIInterface.class);
+                Call<LoginResponse> call = apiInterface.login(loginRequest, headers);
+                response = call.execute();
+                if (response.code() == 200) {
+                    lResponse = response.body();
+                } else {
+                    lResponse = prepareLoginResponse(response.code(), response.errorBody().string(), false);
                 }
             }
-
-            @Override
-            public void onFailure(Call<LoginResponse> call, Throwable throwable) {
-                mObserver.update(LoginServiceImpl.this,
-                        prepareLoginResponse(4,
-                                 throwable.getLocalizedMessage(),
-                                false)
-                );
+        }catch(Throwable t){
+            isError=true;
+            errorObject=t;
+            lResponse = prepareLoginResponse(8,errorObject.getMessage(),false);
+        }finally {
+            if(isError){
+                Log.e(TAG,"Error occured in login call : "+errorObject.getMessage());
+                errorObject.printStackTrace();
             }
-        });
+            errorObject=null;
+            response = null;
+        }
+        return lResponse;
     }
 
     @Override
-    public void doResetPassword(ResetPassRequest resetPasswordRequest, HashMap<String, String> headers) {
+    public synchronized ResetPassResponse doResetPassword(ResetPassRequest resetPasswordRequest, HashMap<String, String> headers) {
+
         APIInterface apiInterface = null;
+        boolean isError = false;
+        Throwable errorObject = null;
+        Response<ResetPassResponse> response = null;
+        ResetPassResponse rpResponse = null;
+        boolean isUiThread = Build.VERSION.SDK_INT >= Build.VERSION_CODES.M
+                ? Looper.getMainLooper().isCurrentThread()
+                : Thread.currentThread() == Looper.getMainLooper().getThread();
+
         try {
-            apiInterface = APIClient.getInstance().setServerInfo(mServerInfo).getRetrofit().create(APIInterface.class);
-        }catch(Exception exc){
-            Log.e(TAG,"Error while creating API Interface. Possibly , Server information is not correct.");
-            exc.printStackTrace();
-
-            mObserver.update(LoginServiceImpl.this,preparResetPassResponse(1,
-                    "Error while creating API Interface. Possibly , Server information is not correct.",
-                    false));
-
-            return;
-        }
-        Call<ResetPassResponse> call = apiInterface.resetPassword(resetPasswordRequest,headers);
-        call.enqueue(new Callback<ResetPassResponse>() {
-            @Override
-            public void onResponse(Call<ResetPassResponse> call, Response<ResetPassResponse> response) {
-                if(response.code()==200){
-                    try{
-                        mObserver.update(LoginServiceImpl.this,response.body());
-                    }catch(Exception exc){
-                        Log.e(TAG,"Response Error : "+ exc.getLocalizedMessage());
-                        exc.printStackTrace();
-                        mObserver.update(LoginServiceImpl.this,
-                                preparResetPassResponse(2,
-                                        exc.getLocalizedMessage(),
-                                        false)
-                        );
-                    }
-                }else{
-                    mObserver.update(LoginServiceImpl.this,
-                            preparResetPassResponse(response.code(),
-                                    response.message(),
-                                    false)
-                    );
+            if(isUiThread){
+                rpResponse = preparResetPassResponse(9,"Please call this API from non UI thread.",false);
+            }else if(!isValidResetPassRequest(resetPasswordRequest)){
+                rpResponse = preparResetPassResponse(9,"Invalid reset password request",false);
+            }else {
+                apiInterface = APIClient.getInstance().setServerInfo(mServerInfo).getRetrofit().create(APIInterface.class);
+                Call<ResetPassResponse> call = apiInterface.resetPassword(resetPasswordRequest, headers);
+                response = call.execute();
+                if (response.code() == 200) {
+                    rpResponse = response.body();
+                } else {
+                    rpResponse = preparResetPassResponse(response.code(), response.errorBody().string(), false);
                 }
             }
-
-            @Override
-            public void onFailure(Call<ResetPassResponse> call, Throwable throwable) {
-                mObserver.update(LoginServiceImpl.this,
-                        preparResetPassResponse(4,
-                                 throwable.getLocalizedMessage(),
-                                false)
-                );
+        }catch(Throwable t){
+            isError=true;
+            errorObject=t;
+            rpResponse = preparResetPassResponse(9,errorObject.getMessage(),false);
+        }finally {
+            if(isError){
+                Log.e(TAG,"Error occured in login call : "+errorObject.getMessage());
+                errorObject.printStackTrace();
             }
-        });
+            errorObject=null;
+            response = null;
+        }
+
+        return rpResponse;
     }
 
     public Observer getObserver() {
@@ -175,5 +162,19 @@ public class LoginServiceImpl extends Observable implements LoginService{
         resetPassResponse.setOperationResult(operationResult);
 
         return resetPassResponse;
+    }
+
+    private boolean isValidLoginRequest(LoginRequest loginRequest){
+        if(loginRequest==null) return false;
+        if(loginRequest.getUserName()==null || loginRequest.getUserName().isEmpty()) return false;
+        if(loginRequest.getPassword()==null || loginRequest.getPassword().isEmpty()) return false;
+        if(loginRequest.getDeviceId()==null || loginRequest.getDeviceId().isEmpty()) return false;
+        return true;
+    }
+
+    private boolean isValidResetPassRequest(ResetPassRequest resetPassRequest){
+        if(resetPassRequest==null) return false;
+        if(resetPassRequest.getNewPassword()==null || resetPassRequest.getNewPassword().isEmpty()) return false;
+        return true;
     }
 }
