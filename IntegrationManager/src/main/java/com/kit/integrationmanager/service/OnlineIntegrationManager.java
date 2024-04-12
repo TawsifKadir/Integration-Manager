@@ -50,7 +50,7 @@ public class OnlineIntegrationManager extends Observable implements IntegrationM
         mObserver = observer;
     }
 
-    public void syncRecords(List<Beneficiary> beneficiaries,HashMap<String,String > headers) throws Exception{
+    public synchronized void syncRecords(List<Beneficiary> beneficiaries,HashMap<String,String > headers) throws Exception{
         BatchRegistrationRequest apiRequest = BatchRegistrationRequest.builder().beneficiaries(beneficiaries).build();
         apiInterface = null;
         try {
@@ -135,7 +135,7 @@ public class OnlineIntegrationManager extends Observable implements IntegrationM
         });
     }
 
-    public void syncRecord(Beneficiary beneficiary, HashMap<String,String> headers) throws Exception{
+    public synchronized void syncRecord(Beneficiary beneficiary, HashMap<String,String> headers) throws Exception{
 
         Beneficiary mBeneficiary = beneficiary;
         apiInterface = null;
