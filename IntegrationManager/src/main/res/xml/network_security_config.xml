@@ -3,6 +3,7 @@
     <domain-config cleartextTrafficPermitted="true">
         <domain includeSubdomains="true">snsopafis.southsudansafetynet.info</domain>
         <domain includeSubdomains="true">snsopafis.karoothitbd.com</domain>
+        <domain includeSubdomains="true">dev.karoothitbd.com</domain>
     </domain-config>
     <base-config>
         <trust-anchors>

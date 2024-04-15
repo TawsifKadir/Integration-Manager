@@ -4,14 +4,14 @@ package com.kit.integrationmanager.service;
 import android.content.Context;
 import android.util.Log;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.kit.integrationmanager.APIClient;
 import com.kit.integrationmanager.APIInterface;
 
 import com.kit.integrationmanager.model.Device;
 import com.kit.integrationmanager.model.ServerInfo;
 import com.kit.integrationmanager.model.Beneficiary;
+import com.kit.integrationmanager.payload.BatchRegistrationResponseV2;
+import com.kit.integrationmanager.payload.BatchRegistrationResult;
 import com.kit.integrationmanager.payload.RegistrationResult;
 import com.kit.integrationmanager.payload.RegistrationStatus;
 import com.kit.integrationmanager.payload.BatchRegistrationRequest;
@@ -135,6 +135,92 @@ public class OnlineIntegrationManager extends Observable implements IntegrationM
         });
     }
 
+    public synchronized void syncRecordsV2(List<Beneficiary> beneficiaries,HashMap<String,String > headers) throws Exception{
+        BatchRegistrationRequest apiRequest = BatchRegistrationRequest.builder().beneficiaries(beneficiaries).build();
+        apiInterface = null;
+        try {
+            if(!DeviceManager.getInstance(mContext).isOnline()){
+                Log.d(TAG,"Error: The device is not connetced.");
+                mObserver.update(OnlineIntegrationManager.this,prepareBatchRegistrationResult(
+                        RegistrationStatus.FAILED,
+                        1,
+                        "The device is not connetced.",
+                        null
+                ));
+                return;
+            }
+
+            if(beneficiaries==null || beneficiaries.isEmpty()){
+                Log.d(TAG,"Error: empty beneficiary list provided.");
+                mObserver.update(OnlineIntegrationManager.this,prepareBatchRegistrationResult(
+                        RegistrationStatus.FAILED,
+                        10,
+                        "Empty beneficiary list provided.",
+                        null
+                ));
+            }
+
+            apiInterface = APIClient.getInstance().setServerInfo(mServerInfo).getRetrofit().create(APIInterface.class);
+        }catch(Exception exc){
+            exc.printStackTrace();
+            mObserver.update(OnlineIntegrationManager.this,prepareBatchRegistrationResult(
+                    RegistrationStatus.FAILED,
+                    1,
+                    "Error while creating API Interface. Possibly , Server information is not correct.",
+                    null
+            ));
+            return;
+        }
+
+        Call<List<BatchRegistrationResponseV2>> call = apiInterface.registerBatchV2(apiRequest, headers);
+        call.enqueue(new Callback<List<BatchRegistrationResponseV2>>() {
+
+            @Override
+            public void onResponse(Call<List<BatchRegistrationResponseV2>> call, Response<List<BatchRegistrationResponseV2>> response) {
+                if(response.code()==200) {
+                    try {
+                        mObserver.update(OnlineIntegrationManager.this, prepareBatchRegistrationResult(
+                                RegistrationStatus.SUCCESS,
+                                0,
+                                "",
+                                response.body()
+                        ));
+                    } catch (Throwable exc) {
+                        Log.e(TAG, "Response Error : " + exc.getLocalizedMessage());
+                        exc.printStackTrace();
+                        mObserver.update(OnlineIntegrationManager.this,prepareBatchRegistrationResult(
+                                RegistrationStatus.FAILED,
+                                1,
+                                exc.getLocalizedMessage(),
+                                null
+                        ));
+                    }
+                }else{
+                    String msg = "Error Occurred";
+                    try{msg=response.errorBody().string();}catch(Exception exc){}
+                    mObserver.update(OnlineIntegrationManager.this,prepareBatchRegistrationResult(
+                            RegistrationStatus.FAILED,
+                            response.code(),
+                            msg,
+                            null
+                    ));
+                }
+            }
+
+            @Override
+            public void onFailure(Call<List<BatchRegistrationResponseV2>> call, Throwable throwable) {
+                RegistrationResult syncResult = new RegistrationResult(RegistrationStatus.FAILED,null);
+                mObserver.update(OnlineIntegrationManager.this,prepareBatchRegistrationResult(
+                        RegistrationStatus.FAILED,
+                        1,
+                        throwable.getMessage(),
+                        null
+                ));
+            }
+        });
+    }
+
+
     public synchronized void syncRecord(Beneficiary beneficiary, HashMap<String,String> headers) throws Exception{
 
         Beneficiary mBeneficiary = beneficiary;
@@ -223,6 +309,12 @@ public class OnlineIntegrationManager extends Observable implements IntegrationM
         registrationStatus.setErrorCode(errorCode);
         registrationStatus.setErrorMsg(errorMsg);
         RegistrationResult syncResult = new RegistrationResult(registrationStatus,result);
+        return syncResult;
+    }
+    BatchRegistrationResult prepareBatchRegistrationResult(RegistrationStatus registrationStatus,int errorCode, String errorMsg,List<BatchRegistrationResponseV2> result){
+        registrationStatus.setErrorCode(errorCode);
+        registrationStatus.setErrorMsg(errorMsg);
+        BatchRegistrationResult syncResult = new BatchRegistrationResult(registrationStatus,result);
         return syncResult;
     }
     @Override
