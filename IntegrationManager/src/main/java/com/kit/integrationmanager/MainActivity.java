@@ -2,6 +2,7 @@ package com.kit.integrationmanager;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.util.Log;
@@ -17,6 +18,7 @@ import com.kit.integrationmanager.model.Device;
 import com.kit.integrationmanager.model.Location;
 import com.kit.integrationmanager.model.Login;
 import com.kit.integrationmanager.model.ServerInfo;
+import com.kit.integrationmanager.model.VersionInfo;
 import com.kit.integrationmanager.payload.RegistrationResult;
 import com.kit.integrationmanager.payload.RegistrationStatus;
 import com.kit.integrationmanager.payload.device.request.RegisterDeviceRequest;
@@ -33,6 +35,8 @@ import com.kit.integrationmanager.service.DeviceRegistrationService;
 import com.kit.integrationmanager.service.LoginService;
 import com.kit.integrationmanager.service.LoginServiceImpl;
 import com.kit.integrationmanager.service.OnlineIntegrationManager;
+import com.kit.integrationmanager.service.UpdateCheckService;
+import com.kit.integrationmanager.service.UpdateCheckServiceImpl;
 import com.kit.integrationmanager.store.AuthStore;
 
 import java.io.BufferedReader;
@@ -141,34 +145,32 @@ public class MainActivity extends AppCompatActivity implements Observer {
             @Override
             public void onClick(View v) {
                 try{
-                    ServerInfo serverInfo = new ServerInfo();
-                    serverInfo.setPort(8090);
-                    serverInfo.setProtocol("http");
-                    serverInfo.setHost_name("snsopafis.karoothitbd.com");
 
-                    HashMap<String,String> headers = new HashMap<>();
+                    Runnable r = new Runnable() {
+                        @Override
+                        public void run() {
 
-                    ///headers.put("Authorization","Bearer "+mAuthToken);
-                    ///headers.put("DeviceId","47951385-a13f-409a-9a79-c4aaef0e3f9b");
+                            try {
+                                ServerInfo serverInfo = new ServerInfo();
+                                serverInfo.setPort(443);
+                                serverInfo.setProtocol("https");
+                                serverInfo.setHost_name("snsopafis.southsudansafetynet.info");
 
-                    Address address = new Address();
-                    Location location = new Location();
+                                UpdateCheckService updateCheckService = new UpdateCheckServiceImpl(MainActivity.this, serverInfo);
+                                VersionInfo versionInfo = updateCheckService.getUpdateInformation("0.59.1");
+                                Log.d(TAG,"Version = "+versionInfo.getAppVersion());
+                                Log.d(TAG,"apkUrl = "+versionInfo.getApkUrl());
+                                Log.d(TAG,"update Available = "+versionInfo.isUpdateAvailable());
+                            }catch(Exception exc){
+                                exc.printStackTrace();
+                            }
+                        }
+                    };
 
-                    address.setStateId(1);
-                    address.setCountyId(1);
-                    address.setPayam(1);
-                    address.setBoma(1);
+                    Thread t = new Thread(r);
+                    t.start();
 
-                    location.setLat(1.0);
-                    location.setLon(1.0);
 
-                    RegisterDeviceRequest registerDeviceRequest = RegisterDeviceRequest.builder().address(address)
-                            .location(location).deviceId(DeviceManager.getInstance(MainActivity.this).getDeviceUniqueID())
-                            .imei("").build();
-
-                    DeviceRegistrationService deviceRegistrationService = new DeviceRegistrationServiceImpl(MainActivity.this,MainActivity.this,serverInfo);
-
-                    deviceRegistrationService.registerDevice(registerDeviceRequest,headers);
 
                 }catch(Exception exc){
                     Log.e(TAG,"Error while sending data : "+exc.getMessage());
