@@ -15,4 +15,5 @@ public class PayrollRequest {
     private String county;
     private String payam;
     private String boma;
+    private String supportType;
 }

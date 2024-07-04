@@ -146,6 +146,8 @@ public class MainActivity extends AppCompatActivity {
                     DownloadService downloadService = new DownloadServiceImpl(mServerInfo);
                     PayrollRequest payrollRequest = PayrollRequest.builder().state(String.valueOf(81)).county(String.valueOf(8103)).payam(String.valueOf(810303)).boma(String.valueOf(810303002)).build();
 
+                    PayrollRequest pr = PayrollRequest.builder().supportType()
+
                     Observable<PayrollResponse> nowObservable = downloadService.loadPayrol(payrollRequest,mHeaders, progressSubscriber);
 
                     nowObservable.subscribeOn(Schedulers.io()).
