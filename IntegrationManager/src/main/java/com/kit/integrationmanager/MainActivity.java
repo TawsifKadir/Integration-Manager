@@ -1,10 +1,11 @@
 package com.kit.integrationmanager;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
-import android.content.pm.PackageManager;
+import android.content.Context;
+import android.os.Build;
 import android.os.Bundle;
-import android.provider.Settings;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
@@ -12,48 +13,74 @@ import android.widget.Button;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.kit.integrationmanager.model.Address;
-import com.kit.integrationmanager.model.Beneficiary;
-import com.kit.integrationmanager.model.Device;
-import com.kit.integrationmanager.model.Location;
+import com.kit.databasemanager.dao.PayrollDataDao;
+import com.kit.databasemanager.dao.PayrollTransactionDao;
+
+import com.kit.databasemanager.database.PaymentDatabase;
+import com.kit.databasemanager.model.PayrollBiometricEO;
+import com.kit.databasemanager.model.PayrollDataEO;
+import com.kit.databasemanager.model.PayrollEO;
+import com.kit.integrationmanager.event.DownloadProgressEvent;
+import com.kit.integrationmanager.model.AlternatePayee;
 import com.kit.integrationmanager.model.Login;
+import com.kit.integrationmanager.model.Payroll;
+import com.kit.integrationmanager.model.PayrollAlternate;
+import com.kit.integrationmanager.model.PayrollReconcile;
 import com.kit.integrationmanager.model.ServerInfo;
-import com.kit.integrationmanager.model.VersionInfo;
-import com.kit.integrationmanager.payload.RegistrationResult;
-import com.kit.integrationmanager.payload.RegistrationStatus;
-import com.kit.integrationmanager.payload.device.request.RegisterDeviceRequest;
-import com.kit.integrationmanager.payload.device.response.RegisterDeviceResponse;
-import com.kit.integrationmanager.payload.login.request.LoginRequest;
-import com.kit.integrationmanager.payload.login.response.LoginResponse;
-import com.kit.integrationmanager.payload.reset.request.ResetPassRequest;
-import com.kit.integrationmanager.payload.reset.response.ResetPassResponse;
+
+import com.kit.integrationmanager.payload.download.request.PayrollRequest;
+import com.kit.integrationmanager.payload.download.response.PayrollResponse;
+
+import com.kit.integrationmanager.payload.reconcile.request.PayrollReconcileBatchRequest;
+import com.kit.integrationmanager.payload.reconcile.request.PayrollReconcileRequest;
+import com.kit.integrationmanager.payload.reconcile.response.PayrollReconcileBatchResponse;
+import com.kit.integrationmanager.payload.reconcile.response.PayrollReconcileResponse;
 import com.kit.integrationmanager.service.DeviceManager;
-import com.kit.integrationmanager.service.DeviceRegistrationServiceImpl;
-import com.kit.integrationmanager.service.IntegrationManager;
-import com.kit.integrationmanager.service.DeviceRegistrationService;
+import com.kit.integrationmanager.service.DownloadService;
+import com.kit.integrationmanager.service.DownloadServiceImpl;
+import com.kit.integrationmanager.service.PayrollReconService;
+import com.kit.integrationmanager.service.PayrollReconServiceImpl;
 
-import com.kit.integrationmanager.service.LoginService;
-import com.kit.integrationmanager.service.LoginServiceImpl;
-import com.kit.integrationmanager.service.OnlineIntegrationManager;
-import com.kit.integrationmanager.service.UpdateCheckService;
-import com.kit.integrationmanager.service.UpdateCheckServiceImpl;
-import com.kit.integrationmanager.store.AuthStore;
 
-import java.io.BufferedReader;
+import org.reactivestreams.Subscriber;
+import org.reactivestreams.Subscription;
+
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Observable;
-import java.util.Observer;
+import java.util.concurrent.Callable;
 
-public class MainActivity extends AppCompatActivity implements Observer {
+
+import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
+import io.reactivex.rxjava3.core.Completable;
+import io.reactivex.rxjava3.core.CompletableEmitter;
+import io.reactivex.rxjava3.core.CompletableObserver;
+import io.reactivex.rxjava3.core.CompletableOnSubscribe;
+import io.reactivex.rxjava3.core.Observable;
+import io.reactivex.rxjava3.core.ObservableEmitter;
+import io.reactivex.rxjava3.core.Observer;
+import io.reactivex.rxjava3.disposables.CompositeDisposable;
+import io.reactivex.rxjava3.disposables.Disposable;
+import io.reactivex.rxjava3.schedulers.Schedulers;
+
+public class MainActivity extends AppCompatActivity {
 
     private ObjectMapper mapper = null;
     private Login mLogin = null;
     private String mAuthToken = null;
 
     private String UniqueID = null;
+
+    private Subscriber<DownloadProgressEvent> progressSubscriber;
+
+    private CompositeDisposable mDisposables;
+    private ServerInfo mServerInfo;
+
+    private HashMap<String, String> mHeaders;
+
+    private  int totalDataCount = 0;
+    private  int storedDataCount = 0;
+
     private String TAG = "OnlineIntegratioManagerTestActivity";
 
     @Override
@@ -68,26 +95,92 @@ public class MainActivity extends AppCompatActivity implements Observer {
         UniqueID = DeviceManager.getInstance(MainActivity.this).getDeviceUniqueID();
         Log.d(TAG,"Device unique ID is : "+UniqueID);
         Log.d(TAG,"Is Device online : "+DeviceManager.getInstance(this).isOnline());
+
+        mDisposables = new CompositeDisposable();
+
+        mServerInfo = new ServerInfo();
+        mServerInfo.setPort(8090);
+        mServerInfo.setProtocol("http");
+        mServerInfo.setHost_name("dev.karoothitbd.com");
+
+        mHeaders = new HashMap<>();
+        mHeaders.put("Authorization", "Bearer eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJzYWtpYiIsImlhdCI6MTcxNDk4MTEwOCwiZXhwIjoxODcyNjYxMTA4fQ.7FgalnXhBOcC7q-nYfONbxmc7My4iUOeWpN2eK3b7vc_br43NCEFiKWIrXs1cJTsU_Ds_ZZLHRB28c-jdgiBRw");
+        mHeaders.put("DeviceId", "29feb6211b04-a56d-7d6a-e79e-018b2f19");
+
+
+
         mapper = new ObjectMapper();
         registerBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 try {
 
-                    InputStream is = getResources().openRawResource(R.raw.batch_reg);
-                    BufferedReader br = new BufferedReader(new InputStreamReader(is, "UTF-8"));
-//                    Beneficiary beneficiary = mapper.readValue(br, Beneficiary.class);
-                    ////https://snsopafis.southsudansafetynet.info/afis/swagger-ui.html
-                    List<Beneficiary> beneficiaries = mapper.readValue(br,new TypeReference<List<Beneficiary>>(){});
-                    ServerInfo serverInfo = new ServerInfo();
-                    serverInfo.setPort(443);
-                    serverInfo.setProtocol("https");
-                    serverInfo.setHost_name("snsopafis.southsudansafetynet.info");
-                    HashMap<String,String> headers = new HashMap<>();
-                    headers.put("Authorization","Bearer eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJzaG92b24iLCJpYXQiOjE3MDg4ODY5OTYsImV4cCI6MTg2NjU2Njk5Nn0.L-75R-EYM1GbrAqj-KdRpWLjxfxCMdVsAboepITEnI2I6AtTUtRhTgQaevzb5GOLWPnGaAUzggcC6SsArnMj-g");
-                    headers.put("DeviceId","d5a58ff3-dc14-4333-8076-72b0fb4cab7a");
-                    IntegrationManager integrationManager = new OnlineIntegrationManager(MainActivity.this,MainActivity.this,serverInfo);
-                    integrationManager.syncRecords(beneficiaries,headers);
+
+                    progressSubscriber = new Subscriber<DownloadProgressEvent>() {
+                        @Override
+                        public void onComplete() {
+                            Log.d(TAG, "Progress listener on complete called");
+                        }
+
+                        @Override
+                        public void onError(Throwable e) {
+                            Log.d(TAG, "Progress listener on error called.");
+                            Log.e(TAG, "Error msg >> " + e.getMessage());
+                            e.printStackTrace();
+                        }
+
+                        @Override
+                        public void onSubscribe(Subscription s) {
+                            Log.d(TAG, "Progress listener on subscribe called");
+
+                        }
+
+                        @Override
+                        public void onNext(DownloadProgressEvent progressEvent) {
+                            Log.d(TAG, "Progress listener on next called.");
+                            Log.d(TAG, "Progress : " + progressEvent.getProgress());
+                        }
+                    };
+
+
+                    DownloadService downloadService = new DownloadServiceImpl(mServerInfo);
+                    PayrollRequest payrollRequest = PayrollRequest.builder().state(String.valueOf(81)).county(String.valueOf(8103)).payam(String.valueOf(810303)).boma(String.valueOf(810303002)).build();
+
+                    Observable<PayrollResponse> nowObservable = downloadService.loadPayrol(payrollRequest,mHeaders, progressSubscriber);
+
+                    nowObservable.subscribeOn(Schedulers.io()).
+                            observeOn(AndroidSchedulers.mainThread()).
+                            subscribe(new Observer<PayrollResponse>() {
+                                PayrollResponse nowPayrollResponse = null;
+                                @Override
+                                public void onSubscribe(@NonNull Disposable d) {
+                                    Log.d(TAG, "Observer has been subscribed.");
+                                    mDisposables.add(d);
+                                }
+
+                                @Override
+                                public void onNext(@NonNull PayrollResponse payrollResponse) {
+                                    Log.d(TAG, "Got the data.");
+                                    Log.d(TAG, "Operation Result : " + payrollResponse.isOperationResult());
+                                    Log.d(TAG, "Error Code : " + payrollResponse.getErrorCode());
+                                    Log.d(TAG, "Error Message : " + payrollResponse.getErrorMsg());
+                                    Log.d(TAG, "Total Records : " + payrollResponse.getTotal());
+                                    nowPayrollResponse = payrollResponse;
+                                }
+
+                                @Override
+                                public void onError(@NonNull Throwable e) {
+                                    Log.d(TAG, "Error occured : " + e.getMessage());
+                                    e.printStackTrace();
+                                }
+
+                                @Override
+                                public void onComplete() {
+                                    Log.d(TAG, "Task Completed");
+                                    storeInDatabase(nowPayrollResponse);
+                                }
+                            });
+
                 }catch (Exception ex){
                     Log.e(TAG,"Error while sending data : "+ex.getMessage());
                     ex.printStackTrace();
@@ -98,205 +191,252 @@ public class MainActivity extends AppCompatActivity implements Observer {
         loginBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                try{
 
-                    if(DeviceManager.getInstance(MainActivity.this).isOnline()){
-                        mLogin = new Login();
-                        mLogin.setUserName("fakadir_23");
-                        mLogin.setPassword("f230878");
-                        mLogin.setDeviceID("47951385-a13f-409a-9a79-c4aaef0e3f9b");
-
-                        ServerInfo serverInfo = new ServerInfo();
-                        serverInfo.setPort(8090);
-                        serverInfo.setProtocol("http");
-                        serverInfo.setHost_name("snsopafis.karoothitbd.com");
-                        HashMap<String,String> headers = new HashMap<>();
-                        ///headers.put("Authorization","Bearer eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJ1c2VyMSIsImlhdCI6MTcwNzkyODUwOCwiZXhwIjoxODY1NjA4NTA4fQ.yRgZYaP2WlSoTtP8ZjhFLCTD3_Ov7SZtVLzrWG9BK7qDrXSCIlMwJM5kS0HDyrD1_qNbJFPm8Hz9KlkFGDfQ7Q");
-                        headers.put("DeviceId",mLogin.getDeviceID());
-
-                        LoginRequest loginRequest = LoginRequest.builder().userName(mLogin.getUserName()).password(mLogin.getPassword()).deviceId(mLogin.getDeviceID()).build();
-
-                        LoginService loginService = new LoginServiceImpl(MainActivity.this,MainActivity.this,serverInfo);
-
-                        loginService.doOnlineLogin(loginRequest,headers);
-                    }else {
-                        AuthStore mAuthStore = AuthStore.getInstance(MainActivity.this);
-                        mLogin = mAuthStore.getLoginInfoFromCache();
-                        if(mLogin==null){
-                            Log.e(TAG,"No cache available for offline login");
-                        }else {
-                            boolean authResult = AuthStore.getInstance(MainActivity.this).doOfflineAuthentication("fakadir_23",
-                                    "f230878", "47951385-a13f-409a-9a79-c4aaef0e3f9b");
-                            if(authResult){
-                                Log.d(TAG,"Login Successful");
-                            }else{
-                                Log.e(TAG,"Login Error");
-                            }
-                        }
-                    }
-                }catch(Exception exc){
-                    Log.e(TAG,"Error while sending data : "+exc.getMessage());
-                    exc.printStackTrace();
-                }
             }
         });
 
         registerDeviceBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                try{
-
-                    Runnable r = new Runnable() {
-                        @Override
-                        public void run() {
-
-                            try {
-                                ServerInfo serverInfo = new ServerInfo();
-                                serverInfo.setPort(443);
-                                serverInfo.setProtocol("https");
-                                serverInfo.setHost_name("snsopafis.southsudansafetynet.info");
-
-                                UpdateCheckService updateCheckService = new UpdateCheckServiceImpl(MainActivity.this, serverInfo);
-                                VersionInfo versionInfo = updateCheckService.getUpdateInformation("0.59.1");
-                                Log.d(TAG,"Version = "+versionInfo.getAppVersion());
-                                Log.d(TAG,"apkUrl = "+versionInfo.getApkUrl());
-                                Log.d(TAG,"update Available = "+versionInfo.isUpdateAvailable());
-                            }catch(Exception exc){
-                                exc.printStackTrace();
                             }
-                        }
-                    };
-
-                    Thread t = new Thread(r);
-                    t.start();
-
-
-
-                }catch(Exception exc){
-                    Log.e(TAG,"Error while sending data : "+exc.getMessage());
-                    exc.printStackTrace();
-                }
-            }
         });
 
         resetBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                try{
-                    ServerInfo serverInfo = new ServerInfo();
-                    serverInfo.setPort(8090);
-                    serverInfo.setProtocol("http");
-                    mLogin.setPassword("f230878");
-                    serverInfo.setHost_name("snsopafis.karoothitbd.com");
-                    HashMap<String,String> headers = new HashMap<>();
-                    headers.put("Authorization","Bearer "+mAuthToken);
-                    headers.put("DeviceId","47951385-a13f-409a-9a79-c4aaef0e3f9b");
+                readPayrollReconcileJson(MainActivity.this).subscribeOn(Schedulers.io()).observeOn(AndroidSchedulers.mainThread())
+                        .subscribe(new Observer<PayrollReconcileBatchRequest>() {
+                            @Override
+                            public void onSubscribe(@NonNull Disposable d) {
+                                mDisposables.add(d);
+                            }
 
-                    ResetPassRequest resetPassRequest = ResetPassRequest.builder().newPassword(mLogin.getPassword()).build();
+                            @Override
+                            public void onNext(@NonNull PayrollReconcileBatchRequest payrollReconcileBatchRequest) {
 
-                    LoginService loginService = new LoginServiceImpl(MainActivity.this,MainActivity.this,serverInfo);
 
-                    loginService.doResetPassword(resetPassRequest,headers);
+                                PayrollReconService payrollReconService = new PayrollReconServiceImpl(mServerInfo);
+                                Observable<PayrollReconcileBatchResponse> nowObservable = payrollReconService.reconcilePayrollBatch(payrollReconcileBatchRequest,mHeaders);
+                                nowObservable.subscribeOn(Schedulers.io()).observeOn(AndroidSchedulers.mainThread())
+                                        .subscribe(new Observer<PayrollReconcileBatchResponse>() {
+                                            @Override
+                                            public void onSubscribe(@NonNull Disposable d) {
+                                                mDisposables.add(d);
+                                            }
 
-                }catch(Exception exc){
-                    Log.e(TAG,"Error while sending data : "+exc.getMessage());
-                    exc.printStackTrace();
-                }
+                                            @Override
+                                            public void onNext(@NonNull PayrollReconcileBatchResponse payrollReconcileBatchResponse) {
+                                                Log.d(TAG,"Received batch payroll reconciliation reponse");
+                                                Log.d(TAG,"Response size = "+payrollReconcileBatchResponse.getBulkResponse().size());
+                                            }
+
+                                            @Override
+                                            public void onError(@NonNull Throwable e) {
+                                                Log.e(TAG,"Error in bath payroll reconciliation = "+e.getMessage());
+                                                e.printStackTrace();
+                                            }
+
+                                            @Override
+                                            public void onComplete() {
+                                                Log.d(TAG,"Batch payroll reconciliation completed");
+                                            }
+                                        });
+                            }
+
+                            @Override
+                            public void onError(@NonNull Throwable e) {
+                                Log.e(TAG,e.getMessage());
+                                e.printStackTrace();
+                            }
+
+                            @Override
+                            public void onComplete() {
+                                Log.d(TAG,"Payroll data loaded.");
+                            }
+                        });
             }
         });
     }
 
-    @Override
+
     public void update(Observable o, Object arg) {
-        try{
-            ObjectMapper mapper = new ObjectMapper();
 
-            Log.d(TAG, "Received update>>>>");
-
-            if (arg == null) {
-                Log.e(TAG, "Received null parameter in update. Returning...");
-                return;
-            }
-
-            if(arg instanceof LoginResponse){
-                LoginResponse loginResponse = (LoginResponse)arg;
-                try{
-                    String data = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(loginResponse);
-                    Log.d(TAG,"JSON Formatted Login Response: "+data);
-                }catch(JsonProcessingException exc){
-                    Log.e(TAG,"JSON Parse Exception.");
-                    exc.printStackTrace();
-                }
-
-                if(loginResponse.isOperationResult()){
-                    if("ACTIVE".equalsIgnoreCase(loginResponse.getStatus())){
-                        mAuthToken = loginResponse.getToken();
-                        AuthStore.getInstance(MainActivity.this).saveLoginInfoToCache(MainActivity.this.mLogin);
-                        AuthStore.getInstance(MainActivity.this).setAuthToken(mAuthToken);
-                        Log.d(TAG,"Online Authentication Successful");
-                        ////Success - Login the user and go to dashboard
-                    }else if("PENDING".equalsIgnoreCase(loginResponse.getStatus())){
-                        mAuthToken = loginResponse.getToken();
-                        Log.d(TAG,"Received authentication token : "+mAuthToken);
-                        ///User needs to Reset Password
-                    }
-                }
-                Log.d(TAG,"Received login request update");
-            }else if(arg instanceof ResetPassResponse){
-                ResetPassResponse resetPassResponse = (ResetPassResponse)arg;
-                try{
-                    String data = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(resetPassResponse);
-                    Log.d(TAG,"JSON Formatted Reset Password Response: "+data);
-                }catch(JsonProcessingException exc){
-                    Log.e(TAG,"JSON Parse Exception.");
-                    exc.printStackTrace();
-                }
-
-
-                if(resetPassResponse.isOperationResult()){
-                    if(AuthStore.getInstance(MainActivity.this).saveLoginInfoToCache(mLogin)) {
-                        AuthStore.getInstance(MainActivity.this).setAuthToken(mAuthToken);
-                    }
-                    Log.d(TAG,"Password reset successful");
-                    ///Successful. Take user back to Login Page
-
-                }
-
-            }else if(arg instanceof RegistrationResult){
-                Log.d(TAG, "Received parameter in update.");
-                RegistrationResult registrationResult = (RegistrationResult) arg;
-                if (registrationResult.getSyncStatus() == RegistrationStatus.SUCCESS) {
-
-                    Log.d(TAG, "Registration Successfull");
-
-                    List<String> appIds = registrationResult.getApplicationIds();
-                    if (appIds == null) {
-                        Log.e(TAG, "No beneficiary list received. Returning ... ");
-                        return;
-                    }
-
-                    Log.d(TAG, "Registered following users: ");
-                    for (String nowId : appIds) {
-                        Log.d(TAG, "Beneficiary ID : " + nowId);
-                    }
-
-                } else {
-                    Log.d(TAG, "Registration Failed");
-                    Log.d(TAG, "Error code : "+String.valueOf(registrationResult.getSyncStatus().getErrorCode()));
-                    Log.d(TAG, "Error Msg : "+registrationResult.getSyncStatus().getErrorMsg());
-                }
-            }else if(arg instanceof RegisterDeviceResponse){
-                try{
-                    RegisterDeviceResponse registerDeviceResponse = (RegisterDeviceResponse)arg;
-                    String data = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(registerDeviceResponse);
-                    Log.d(TAG,"JSON Formatted Register Device Response: "+data);
-                }catch(JsonProcessingException exc){
-                    Log.e(TAG,"JSON Parse Exception.");
-                    exc.printStackTrace();
-                }
-            }
-        }catch(Exception exc){
-            Log.e(TAG,"Error while processing update : "+exc.getMessage());
-        }
     }
+
+    public void storeInDatabase(final PayrollResponse payrollResponse){
+
+        if(payrollResponse==null){
+            Log.d(TAG,"Empty payroll response. Nothing to do");
+        }
+
+
+        PaymentDatabase.getInstance(MainActivity.this).payrollCleanupDao().deleteAllPayroll();
+
+        Observable<Integer> nowObservable = new Observable<Integer>() {
+            @Override
+            protected void subscribeActual(@NonNull Observer<? super Integer> emitter) {
+
+                Payroll payroll = payrollResponse.getPayrolls().get(0);
+                totalDataCount = payroll.getPayrollData().size();
+
+                PaymentDatabase paymentDatabase = PaymentDatabase.getInstance(MainActivity.this);
+
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+
+                        PayrollEO payrollEO = new PayrollEO();
+                        payrollEO.mapFromBO(payroll);
+
+                        paymentDatabase.payrollDao().insert(payrollEO);
+
+                        payroll.getPayrollData().stream().forEach(payrollData -> {
+                            try {
+
+                                    PayrollDataEO payrollDataEO = null;
+                                    PayrollBiometricEO payrollBenBiometricEO = null;
+                                    PayrollBiometricEO payrollFirstAlternateBiometricEO = null;
+                                    PayrollBiometricEO payrollSecondAlternateBiometricEO = null;
+
+
+                                    if (payrollData != null && payrollData.getHouseHoldDetail() != null) {
+                                        payrollDataEO = new PayrollDataEO();
+                                        payrollDataEO.mapFromBO(payrollData,payrollData.getHouseHoldDetail(),payrollData.getAlternates());
+                                    }
+
+                                    if(payrollData.getHouseHoldDetail().getBiometric()!=null){
+                                        payrollBenBiometricEO = new PayrollBiometricEO();
+                                        payrollBenBiometricEO.mapFromBO(payrollData.getHouseHoldDetail().getBiometric());
+                                    }
+
+                                    List<PayrollAlternate> altList = payrollData.getAlternates();
+
+                                    if(altList!=null){
+                                        if(altList.size()>0 && (altList.get(0).getBiometric()!=null) ){
+                                            payrollFirstAlternateBiometricEO = new PayrollBiometricEO();
+                                            payrollFirstAlternateBiometricEO.mapFromBO(altList.get(0).getBiometric());
+                                        }
+
+                                        if(altList.size()>1 && (altList.get(1).getBiometric()!=null)){
+                                            payrollSecondAlternateBiometricEO = new PayrollBiometricEO();
+                                            payrollSecondAlternateBiometricEO.mapFromBO(altList.get(1).getBiometric());
+                                        }
+                                    }
+
+                                    PayrollTransactionDao payrollTransactionDao = paymentDatabase.payrollTransactionDao();
+                                    payrollTransactionDao.insertPayrollRecord(payrollEO,
+                                            payrollDataEO,
+                                            payrollBenBiometricEO,
+                                            payrollFirstAlternateBiometricEO,
+                                            payrollSecondAlternateBiometricEO
+                                            );
+
+                                     storedDataCount++;
+                                     emitter.onNext(storedDataCount);
+
+                            }catch(Throwable t){
+                               emitter.onError(t);
+                            }
+
+                        });
+                    }
+
+                emitter.onComplete();
+            }
+
+
+        };
+        nowObservable.subscribeOn(Schedulers.io()).observeOn(AndroidSchedulers.mainThread()).subscribe(new Observer<Integer>() {
+            
+            @Override
+            public void onSubscribe(@NonNull Disposable d) {
+                mDisposables.add(d);
+            }
+
+            @Override
+            public void onNext(@NonNull Integer count) {
+               Log.d(TAG,"Stored "+count+" of "+totalDataCount);
+            }
+
+            @Override
+            public void onError(@NonNull Throwable e) {
+                Log.e(TAG,"Error occured : "+e.getMessage());
+                e.printStackTrace();
+            }
+
+            @Override
+            public void onComplete() {
+                Log.d(TAG,"Data insert completed");
+                populateAFIS();
+            }
+        });
+    }
+
+    public void populateAFIS(){
+        Completable.create(new CompletableOnSubscribe() {
+            @Override
+            public void subscribe(@NonNull CompletableEmitter emitter) throws Throwable {
+                try {
+                    PayrollDataDao payrollDataDao = PaymentDatabase.getInstance(MainActivity.this).payrollDataDao();
+                    Log.d(TAG,"Total payroll data count = "+payrollDataDao.findTotalPayrollData());
+
+                    List<PayrollDataEO> payrollDataDaoList = payrollDataDao.findAllWithLimitOffset(500, 0);
+                    Log.d(TAG,"Payroll Data List size = "+payrollDataDaoList.size());
+
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                        payrollDataDaoList.forEach(data -> {
+                            Log.d(TAG, "Beneficiary name : " + data.benFirstName + " " + data.benMiddleName + " " + data.benLastName);
+                        });
+                    }
+
+                    emitter.onComplete();
+                }catch(Throwable t){
+                    emitter.onError(t);
+                }
+            }
+        }).subscribeOn(Schedulers.io()).observeOn(AndroidSchedulers.mainThread()).subscribe(new CompletableObserver() {
+            @Override
+            public void onSubscribe(@NonNull Disposable d) {
+                mDisposables.add(d);
+            }
+
+            @Override
+            public void onComplete() {
+                Log.d(TAG,"DONE");
+            }
+
+            @Override
+            public void onError(@NonNull Throwable e) {
+                Log.d(TAG,"ERROR OCCURED : "+e.getMessage());
+                e.printStackTrace();
+            }
+        });
+
+    }
+
+    private Observable<PayrollReconcileBatchRequest> readPayrollReconcileJson(Context context) {
+
+        Observable<PayrollReconcileBatchRequest> nowObservable = new Observable<PayrollReconcileBatchRequest>() {
+            @Override
+            protected void subscribeActual(@NonNull Observer<? super PayrollReconcileBatchRequest> observer) {
+                PayrollReconcileBatchRequest payrollReconcileBatchRequest = null;
+
+                try {
+
+                    InputStream inputStream = context.getResources().openRawResource(R.raw.payroll_reconcile_request);
+                    ObjectMapper objectMapper = new ObjectMapper();
+                    payrollReconcileBatchRequest = objectMapper.readValue(inputStream, PayrollReconcileBatchRequest.class);
+
+                } catch (Throwable t) {
+                    observer.onError(t);
+                    observer.onComplete();
+                }
+
+                observer.onNext(payrollReconcileBatchRequest);
+                observer.onComplete();
+            }
+        };
+
+
+        return nowObservable;
+    }
+
 }
