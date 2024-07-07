@@ -39,4 +39,7 @@ public class Payroll {
     @JsonProperty("payrollData")
     @SerializedName("payrollData")
     private List<PayrollData> payrollData;
+    @JsonProperty("lockedStatus")
+    @SerializedName("lockedStatus")
+    private String lockedStatus;
 }

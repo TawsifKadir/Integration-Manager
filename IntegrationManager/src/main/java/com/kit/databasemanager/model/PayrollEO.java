@@ -23,6 +23,7 @@ public class PayrollEO {
     public Integer county;
     public Integer payam;
     public Long boma;
+    public String lockedStatus;
 
     public void mapFromBO(Payroll payroll){
         this.payrollId = payroll.getPayrollId();
@@ -30,6 +31,7 @@ public class PayrollEO {
         this.county = payroll.getCounty();
         this.payam = payroll.getPayam();
         this.boma = payroll.getBoma();
+        this.lockedStatus = payroll.getLockedStatus();
     }
 
 }

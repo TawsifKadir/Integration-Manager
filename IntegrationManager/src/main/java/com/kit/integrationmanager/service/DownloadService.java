@@ -5,7 +5,9 @@ import android.net.Uri;
 
 import com.kit.integrationmanager.event.DownloadProgressEvent;
 import com.kit.integrationmanager.model.Payroll;
+import com.kit.integrationmanager.payload.download.request.PayrollLockRequest;
 import com.kit.integrationmanager.payload.download.request.PayrollRequest;
+import com.kit.integrationmanager.payload.download.response.PayrollLockResponse;
 import com.kit.integrationmanager.payload.download.response.PayrollResponse;
 
 import org.reactivestreams.Subscriber;
@@ -17,5 +19,6 @@ import io.reactivex.rxjava3.core.Observable;
 public interface DownloadService {
     public Observable<PayrollResponse> loadPayrol(PayrollRequest payrollRequest, HashMap<String,String> headers, final Subscriber<DownloadProgressEvent> observeProgress);
     public Observable<PayrollResponse> loadPayrolFromFile(Context context, Uri payrolFile);
+    public Observable<PayrollLockResponse> lockPayrol(PayrollLockRequest payrollLockRequest, HashMap<String,String> headers);
     public void cancelPayrollLoading();
 }

@@ -26,4 +26,7 @@ public interface PayrollDao {
 
     @Query("SELECT * FROM payroll LIMIT :limit OFFSET :offset")
     List<PayrollEO> findAllWithLimitOffset(int limit, int offset);
+
+    @Query("SELECT * FROM payroll")
+    List<PayrollEO> findAllPayrolls();
 }
