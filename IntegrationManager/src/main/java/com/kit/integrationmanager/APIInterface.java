@@ -9,6 +9,12 @@ import com.kit.integrationmanager.payload.device.request.RegisterDeviceRequest;
 import com.kit.integrationmanager.payload.device.response.RegisterDeviceResponse;
 import com.kit.integrationmanager.payload.login.request.LoginRequest;
 import com.kit.integrationmanager.payload.login.response.LoginResponse;
+import com.kit.integrationmanager.payload.download.request.PayrollRequest;
+import com.kit.integrationmanager.payload.download.response.PayrollResponse;
+import com.kit.integrationmanager.payload.reconcile.request.PayrollReconcileBatchRequest;
+import com.kit.integrationmanager.payload.reconcile.request.PayrollReconcileRequest;
+import com.kit.integrationmanager.payload.reconcile.response.PayrollReconcileBatchResponse;
+import com.kit.integrationmanager.payload.reconcile.response.PayrollReconcileResponse;
 import com.kit.integrationmanager.payload.reset.request.ResetPassRequest;
 import com.kit.integrationmanager.payload.reset.response.ResetPassResponse;
 import com.kit.integrationmanager.payload.update.response.CheckUpdateResponse;
@@ -49,4 +55,15 @@ public interface APIInterface {
 
     @GET("/afis/api/common/apk-update/{major}/{minor}/{patch}")
     Call<CheckUpdateResponse> checkUpdate(@Path("major") long major,@Path("minor") long minor,@Path("patch") long patch);
+
+    @Headers({"READ_TIMEOUT:3600", "WRITE_TIMEOUT:120"})
+    @POST("/afis/api/payroll/getPayroll")
+    Call<PayrollResponse> loadPayroll(@Body PayrollRequest payrollRequest, @HeaderMap Map<String, String> headers);
+
+    @POST("/afis/api/payroll/reconciliation/save")
+    Call<PayrollReconcileResponse> reconcilePayroll(@Body PayrollReconcileRequest payrollReconRequest, @HeaderMap Map<String, String> headers);
+    @Headers({"WRITE_TIMEOUT:120"})
+    @POST("/afis/api/payroll/reconciliation/save/batch")
+    Call<PayrollReconcileBatchResponse> reconcilePayrollBatch(@Body PayrollReconcileBatchRequest payrollReconBatchRequest, @HeaderMap Map<String, String> headers);
+
 }

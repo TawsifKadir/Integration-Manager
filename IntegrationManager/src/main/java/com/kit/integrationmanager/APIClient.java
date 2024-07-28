@@ -5,16 +5,14 @@ import android.util.Log;
 
 import androidx.annotation.NonNull;
 
+import com.kit.integrationmanager.interceptor.DownloadProgressInterceptor;
 import com.kit.integrationmanager.model.ServerInfo;
-//import com.moczul.ok2curl.CurlInterceptor;
-//import com.moczul.ok2curl.logger.Logger;
 
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
 import lombok.Getter;
-import lombok.Setter;
-import lombok.extern.flogger.Flogger;
+
 import okhttp3.Interceptor;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -114,6 +112,7 @@ public class APIClient {
                             .writeTimeout(DEFAULT_WRITE_TIMEOUT, TimeUnit.SECONDS)
                             .readTimeout(DEFAULT_READ_TIMEOUT, TimeUnit.SECONDS)
                             .addInterceptor(timeoutInterceptor)
+                            .addInterceptor(new DownloadProgressInterceptor())
                             .addInterceptor(logInterceptor)
                             .build();
                 }else{
@@ -122,6 +121,7 @@ public class APIClient {
                             .writeTimeout(DEFAULT_WRITE_TIMEOUT, TimeUnit.SECONDS)
                             .readTimeout(DEFAULT_READ_TIMEOUT, TimeUnit.SECONDS)
                             .addInterceptor(timeoutInterceptor)
+                            .addInterceptor(new DownloadProgressInterceptor())
                             .build();
                 }
 
