@@ -86,6 +86,7 @@ public class PayrollDataEO {
     public String updatedAt;
     public String latitude;
     public String longitude;
+    public String paymentCenter;
 
 
     public void mapFromBO(PayrollData payrollData,
@@ -153,9 +154,8 @@ public class PayrollDataEO {
         this.longitude = "0.0";
         this.generatedAt = DateUtils.getCurrentDate();
         this.updatedAt = "";
+        this.paymentCenter = "";
 
     }
-
-
 
 }

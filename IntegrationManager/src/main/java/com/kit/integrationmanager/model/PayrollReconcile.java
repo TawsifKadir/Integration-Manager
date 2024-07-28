@@ -108,6 +108,10 @@ public class PayrollReconcile {
     @SerializedName("longitude")
     private String longitude;
 
+    @JsonProperty("paymentCenter")
+    @SerializedName("paymentCenter")
+    private String paymentCenter;
+
     public static PayrollReconcile mapFromEO(PayrollDataEO payrollDataEO) {
         PayrollReconcile dto = new PayrollReconcile();
 
@@ -135,6 +139,7 @@ public class PayrollReconcile {
         dto.setUpdatedAt(payrollDataEO.getUpdatedAt());
         dto.setLatitude(payrollDataEO.getLatitude());
         dto.setLongitude(payrollDataEO.getLongitude());
+        dto.setPaymentCenter(payrollDataEO.getPaymentCenter());
 
         return dto;
     }
