@@ -30,4 +30,6 @@ public class CaseUtils extends PropertyNamingStrategy.PropertyNamingStrategyBase
         return name.toLowerCase();
     }
 
+    //
+
 }

@@ -17,7 +17,9 @@ import com.kit.integrationmanager.event.bus.SimpleEventBus;
 import com.kit.integrationmanager.interceptor.DownloadProgressInterceptor;
 import com.kit.integrationmanager.model.Payroll;
 import com.kit.integrationmanager.model.ServerInfo;
+import com.kit.integrationmanager.payload.download.request.PayrollLockRequest;
 import com.kit.integrationmanager.payload.download.request.PayrollRequest;
+import com.kit.integrationmanager.payload.download.response.PayrollLockResponse;
 import com.kit.integrationmanager.payload.download.response.PayrollResponse;
 import com.kit.integrationmanager.payload.login.request.LoginRequest;
 import com.kit.integrationmanager.payload.login.response.LoginResponse;
@@ -186,6 +188,51 @@ public class DownloadServiceImpl implements DownloadService{
         return nowObservable;
     }
 
+    @Override
+    public Observable<PayrollLockResponse> lockPayrol(PayrollLockRequest payrollLockRequest, HashMap<String, String> headers) {
+
+        Observable<PayrollLockResponse> nowObservable = Observable.create(emitter -> {
+            APIInterface apiInterface;
+            Response<PayrollLockResponse> response;
+
+            // Check if the current thread is the UI thread
+            boolean isUiThread = Build.VERSION.SDK_INT >= Build.VERSION_CODES.M
+                    ? Looper.getMainLooper().isCurrentThread()
+                    : Thread.currentThread() == Looper.getMainLooper().getThread();
+
+            try {
+                if (isUiThread) {
+                    emitter.onError(new IllegalStateException("Please call this API from non UI thread."));
+                } else if (!isValidPayrollLockRequest(payrollLockRequest)) {
+                    emitter.onError(new IllegalArgumentException("Invalid payroll lock request"));
+                } else {
+
+                    apiInterface = APIClient.getInstance().setServerInfo(mServerInfo).getRetrofit().create(APIInterface.class);
+
+                    Call<PayrollLockResponse> nowCall = apiInterface.lockPayroll(payrollLockRequest, headers);
+
+                    response = nowCall.execute();
+
+                    if (response.isSuccessful()) {
+                        emitter.onNext(response.body());
+                        emitter.onComplete();
+                    } else {
+                        PayrollLockResponse errorResponse = preparePayrollLockResponse(response.code(), response.errorBody().string());
+                        emitter.onNext(errorResponse);
+                        emitter.onComplete();
+                    }
+                }
+            }catch(Throwable t){
+                emitter.onError(t);
+                if(this.mProgressSubscription!=null && !this.mProgressSubscription.isDisposed()){
+                    this.mProgressSubscription.dispose();
+                }
+            }
+        });
+
+        return nowObservable;
+    }
+
     private PayrollResponse preparePayrollResponse(int errorCode, String errorMsg, boolean operationResult){
         PayrollResponse payrollResponse = new PayrollResponse();
 
@@ -196,12 +243,33 @@ public class DownloadServiceImpl implements DownloadService{
         return payrollResponse;
     }
 
+    private PayrollLockResponse preparePayrollLockResponse(int errorCode, String errorMsg){
+        PayrollLockResponse payrollLockResponse = new PayrollLockResponse();
+
+        payrollLockResponse.setResponseCode(errorCode);
+        payrollLockResponse.setResponseMessage(errorMsg);
+
+        return payrollLockResponse;
+    }
+
     private boolean isValidPayrollRequest(PayrollRequest payrollRequest){
         if(payrollRequest==null) return false;
         if(payrollRequest.getState()==null || payrollRequest.getState().isEmpty()) return false;
         if(payrollRequest.getCounty()==null || payrollRequest.getCounty().isEmpty()) return false;
         if(payrollRequest.getPayam()==null || payrollRequest.getPayam().isEmpty()) return false;
         if(payrollRequest.getBoma()==null || payrollRequest.getBoma().isEmpty()) return false;
+        return true;
+    }
+
+    private boolean isValidPayrollLockRequest(PayrollLockRequest payrollLockRequest){
+        if(payrollLockRequest==null) return false;
+        if(payrollLockRequest.getWagePaymentReqId()==0) return false;
+        if(payrollLockRequest.getState()==0) return false;
+        if(payrollLockRequest.getCounty()==0) return false;
+        if(payrollLockRequest.getPayam()==0) return false;
+        if(payrollLockRequest.getBoma()==0) return false;
+        if(payrollLockRequest.getSupportType()==null || payrollLockRequest.getSupportType().isEmpty()) return false;
+
         return true;
     }
 
