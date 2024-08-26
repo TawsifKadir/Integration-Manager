@@ -25,9 +25,12 @@ public class PayrollLockRequest {
     @JsonProperty("boma")
     @SerializedName("boma")
     private long boma;
-    @JsonProperty("wagePaymentReqId")
-    @SerializedName("wagePaymentReqId")
-    private int wagePaymentReqId;
+    @JsonProperty("wagePaymentReqIdDIS")
+    @SerializedName("wagePaymentReqIdDIS")
+    private int wagePaymentReqIdDIS;
+    @JsonProperty("wagePaymentReqIdLIPW")
+    @SerializedName("wagePaymentReqIdLIPW")
+    private int wagePaymentReqIdLIPW;
     @JsonProperty("paymentCycle")
     @SerializedName("paymentCycle")
     private String paymentCycle;

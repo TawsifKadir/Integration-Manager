@@ -263,7 +263,7 @@ public class DownloadServiceImpl implements DownloadService{
 
     private boolean isValidPayrollLockRequest(PayrollLockRequest payrollLockRequest){
         if(payrollLockRequest==null) return false;
-        if(payrollLockRequest.getWagePaymentReqId()==0) return false;
+//        if(payrollLockRequest.getWagePaymentReqId()==0) return false;
         if(payrollLockRequest.getState()==0) return false;
         if(payrollLockRequest.getCounty()==0) return false;
         if(payrollLockRequest.getPayam()==0) return false;
