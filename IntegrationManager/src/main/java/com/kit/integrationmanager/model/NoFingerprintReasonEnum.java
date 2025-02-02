@@ -24,11 +24,11 @@ import java.util.List;
 
 public enum NoFingerprintReasonEnum {
     SELECT(0, "Select Reason"),
-    NoFingerprintImpression(1, "No Fingerprint"),
-    NoFinger(2, "Missing Finger"),
-    NoLeftHand(3, "Missing Left Hand"),
-    NoRightHand(4, "Missing Right Hand"),
-    NoBothHand(5, "Missing Both Hand"),
+    NoFingerprintImpression(1, "NoFingerprintImpression"),
+    NoFinger(2, "NoFinger"),
+    NoLeftHand(3, "NoLeftHand"),
+    NoRightHand(4, "NoRightHand"),
+    NoBothHand(5, "NoBothHand"),
     Other(6, "Other");
 
     private final int id;

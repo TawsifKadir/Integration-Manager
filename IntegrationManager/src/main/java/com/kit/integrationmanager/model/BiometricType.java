@@ -20,17 +20,17 @@ import java.util.List;
 
 public enum BiometricType {
 
-    PHOTO(1,"Photo"),
-    LT(2,"Left Thumb"),
-    LI(3,"Left Index"),
-    LM(4,"Left Middle"),
-    LR(5,"Left Ring"),
-    LL(6,"Left Little"),
-    RT(7,"Right Thumb"),
-    RI(8,"Right Index"),
-    RM(9,"Right Middle"),
-    RR(10,"Right Ring"),
-    RL(11,"Right Little"),
+    PHOTO(1,"PHOTO"),
+    LT(2,"LT"),
+    LI(3,"LI"),
+    LM(4,"LM"),
+    LR(5,"LR"),
+    LL(6,"LL"),
+    RT(7,"RT"),
+    RI(8,"RI"),
+    RM(9,"RM"),
+    RR(10,"RR"),
+    RL(11,"RL"),
     NA(12,"NA");
 
     private final String value;

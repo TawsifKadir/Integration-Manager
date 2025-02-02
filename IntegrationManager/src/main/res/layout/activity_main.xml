@@ -8,39 +8,12 @@
     tools:context="com.kit.integrationmanager.MainActivity">
 
     <Button
-        android:id="@+id/registerBtn"
+        android:id="@+id/editBeneficiaryBtn"
         android:layout_width="match_parent"
         android:layout_height="50dp"
         android:paddingBottom="5dp"
         android:paddingTop="5dp"
         android:gravity="center_horizontal"
-        android:text="Register"
-
-        />
-    <Button
-        android:id="@+id/loginBtn"
-        android:layout_width="match_parent"
-        android:layout_height="50dp"
-        android:paddingBottom="5dp"
-        android:paddingTop="5dp"
-        android:gravity="center_horizontal"
-        android:text="Login" />
-    <Button
-        android:id="@+id/resetPassBtn"
-        android:layout_width="match_parent"
-        android:layout_height="50dp"
-        android:paddingBottom="5dp"
-        android:paddingTop="5dp"
-        android:gravity="center_horizontal"
-        android:text="Reset Password" />
-
-    <Button
-        android:id="@+id/registerDeviceBtn"
-        android:layout_width="match_parent"
-        android:layout_height="50dp"
-        android:paddingBottom="5dp"
-        android:paddingTop="5dp"
-        android:gravity="center_horizontal"
-        android:text="Register Device" />
+        android:text="Edit Beneficiary" />
 
 </LinearLayout>
