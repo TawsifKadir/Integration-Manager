@@ -53,9 +53,9 @@ public interface APIInterface {
     @POST("/afis/api/beneficiary/update/batch")
     Call<BeneficiaryEditResponse> beneficiaryEditBatch(@Body BeneficiaryEditRequest beneficiaryEditRequest, @HeaderMap Map<String, String> headers);
 
-    @Headers({"READ_TIMEOUT:120", "WRITE_TIMEOUT:120"})
-    @POST("")
-    Call<BeneficiaryEditStatusResponse> getBeneficiaryEditStatus(@Body BeneficiaryEditStatusRequest beneficiaryEditStatusRequest, @HeaderMap Map<String, String> headers);
+    @Headers({"READ_TIMEOUT:300", "WRITE_TIMEOUT:300"})
+    @POST("/afis/api/beneficiary/update-status")
+    Call<List<BeneficiaryEditStatusResponse>> getBeneficiaryEditStatus(@Body BeneficiaryEditStatusRequest beneficiaryEditStatusRequestList, @HeaderMap Map<String, String> headers);
 
 
     @POST("/afis/api/auth/login")

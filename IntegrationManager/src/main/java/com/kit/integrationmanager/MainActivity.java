@@ -42,6 +42,7 @@ import com.kit.integrationmanager.service.DownloadServiceImpl;
 import com.kit.integrationmanager.service.PayrollReconService;
 import com.kit.integrationmanager.service.PayrollReconServiceImpl;
 import com.kit.integrationmanager.test.UpdateBeneficiary;
+import com.kit.integrationmanager.test.UpdateBeneficiaryStatus;
 
 
 import org.reactivestreams.Subscriber;
@@ -92,6 +93,7 @@ public class MainActivity extends AppCompatActivity {
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
         Button editBeneficiaryBtn = (Button)findViewById(R.id.editBeneficiaryBtn);
+        Button getBeneficiaryEditStatus = (Button)findViewById(R.id.getBeneficiaryStatusBtn);
 
         UniqueID = DeviceManager.getInstance(MainActivity.this).getDeviceUniqueID();
         Log.d(TAG,"Device unique ID is : "+UniqueID);
@@ -111,6 +113,10 @@ public class MainActivity extends AppCompatActivity {
         UpdateBeneficiary updateBeneficiaryProcessor = new UpdateBeneficiary(MainActivity.this,mServerInfo,mHeaders,true);
 
         editBeneficiaryBtn.setOnClickListener(updateBeneficiaryProcessor);
+
+        UpdateBeneficiaryStatus updateBeneficiaryStatusProcessor = new UpdateBeneficiaryStatus(MainActivity.this,mServerInfo,mHeaders);
+
+        getBeneficiaryEditStatus.setOnClickListener(updateBeneficiaryStatusProcessor);
 
         mapper = new ObjectMapper();
 

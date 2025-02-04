@@ -15,6 +15,9 @@ public class BeneficiaryEditResponseEntry {
     @JsonProperty("applicationId")
     @SerializedName("applicationId")
     private String applicationId;
+    @JsonProperty("requestId")
+    @SerializedName("requestId")
+    private String requestId;
     @JsonProperty("errorMessage")
     @SerializedName("errorMessage")
     private String errorMessage;

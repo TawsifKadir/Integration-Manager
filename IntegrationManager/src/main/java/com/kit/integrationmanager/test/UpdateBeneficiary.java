@@ -12,6 +12,7 @@ import com.kit.integrationmanager.model.BeneficiaryEdit;
 import com.kit.integrationmanager.model.ServerInfo;
 import com.kit.integrationmanager.payload.edit.request.BeneficiaryEditRequest;
 import com.kit.integrationmanager.payload.edit.response.BeneficiaryEditResponse;
+import com.kit.integrationmanager.payload.edit.response.BeneficiaryEditResponseEntry;
 import com.kit.integrationmanager.payload.reconcile.request.PayrollReconcileBatchRequest;
 import com.kit.integrationmanager.payload.reconcile.response.PayrollReconcileBatchResponse;
 import com.kit.integrationmanager.service.BeneficiaryEditService;
@@ -76,6 +77,15 @@ public class UpdateBeneficiary implements View.OnClickListener {
                 public void onNext(@NonNull BeneficiaryEditResponse beneficiaryEditResponse) {
                     Log.d(TAG,"Received response from server");
                     Log.d(TAG,"Success Count : "+beneficiaryEditResponse.getSuccessCount());
+
+                    for(BeneficiaryEditResponseEntry beneficiaryEditResponseEntry:beneficiaryEditResponse.getBeneficiaryEditResponseList()){
+                            Log.d(TAG,"Result = "+beneficiaryEditResponseEntry.getResult());
+                            Log.d(TAG,"Error Message = "+beneficiaryEditResponseEntry.getErrorMessage());
+                            Log.d(TAG,"Request ID = "+beneficiaryEditResponseEntry.getRequestId());
+                            Log.d(TAG,"Application ID = "+beneficiaryEditResponseEntry.getApplicationId());
+                            Log.d(TAG,"-------------------------------");
+
+                    }
                     Log.d(TAG,beneficiaryEditResponse.getBeneficiaryEditResponseList().toString());
                 }
 

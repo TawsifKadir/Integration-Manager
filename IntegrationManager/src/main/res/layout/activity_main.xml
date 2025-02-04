@@ -16,4 +16,13 @@
         android:gravity="center_horizontal"
         android:text="Edit Beneficiary" />
 
+    <Button
+        android:id="@+id/getBeneficiaryStatusBtn"
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:paddingBottom="5dp"
+        android:paddingTop="5dp"
+        android:gravity="center_horizontal"
+        android:text="Get  Beneficiary Edit Status" />
+
 </LinearLayout>
