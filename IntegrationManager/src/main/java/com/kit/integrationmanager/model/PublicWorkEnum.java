@@ -5,6 +5,8 @@
  */
 package com.kit.integrationmanager.model;
 
+import com.kit.integrationmanager.listener.EnumListener;
+
 /**
  *
  * @author anwar
@@ -15,7 +17,7 @@ public enum GenderEnum {
     FEMALE
 }
  */
-public enum PublicWorkEnum {
+public enum PublicWorkEnum implements EnumListener {
     POOR_HOUSEHOLD(1,"Poor household with no sufficient income to sustain the household"),
     BODIED_YOUTH_MEMBER(2,"Household contain able bodied youth member (18–35)"),
     HEADED_YOUNG_MEMBER(3,"Household headed by young men and women between the ages of 18 and 35"),
@@ -24,6 +26,12 @@ public enum PublicWorkEnum {
 
     private final String value;
 
+    @Override
+    public String getDisplayValue() {
+        return this.value;
+    }
+
+    @Override
     public int getId() {
         return id;
     }

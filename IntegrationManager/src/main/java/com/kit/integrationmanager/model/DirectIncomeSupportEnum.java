@@ -5,6 +5,8 @@
  */
 package com.kit.integrationmanager.model;
 
+import com.kit.integrationmanager.listener.EnumListener;
+
 /**
  *
  * @author anwar
@@ -15,7 +17,7 @@ public enum GenderEnum {
     FEMALE
 }
  */
-public enum DirectIncomeSupportEnum {
+public enum DirectIncomeSupportEnum implements EnumListener {
 
     NO_ALTERNATE_INCOME_SUPPORT(1,"Child headed households with no alternate income support"),
     LACKING_ALTERNATE_INCOME_SUPPORT(2,"Elderly headed household lacking alternate income support and able bodied member"),
@@ -26,6 +28,12 @@ public enum DirectIncomeSupportEnum {
     private final String value;
     private final int id;
 
+    @Override
+    public String getDisplayValue() {
+        return this.value;
+    }
+
+    @Override
     public int getId() {
         return id;
     }

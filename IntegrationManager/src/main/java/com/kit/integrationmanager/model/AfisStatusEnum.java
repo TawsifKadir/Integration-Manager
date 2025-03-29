@@ -5,11 +5,13 @@
  */
 package com.kit.integrationmanager.model;
 
+import com.kit.integrationmanager.listener.EnumListener;
+
 /**
  *
  * @author anwar
  */
-public enum AfisStatusEnum {
+public enum AfisStatusEnum implements EnumListener {
     PENDING(1,"Pending","Pending"),
     ENROLLED(2,"Enrolled","Enrolled"),
     MATCHED(3,"Matched","Matched"),
@@ -25,6 +27,12 @@ public enum AfisStatusEnum {
         Txt = txt;
     }
 
+    @Override
+    public String getDisplayValue() {
+        return this.value;
+    }
+
+    @Override
     public int getId() {
         return id;
     }

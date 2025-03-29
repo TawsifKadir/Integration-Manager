@@ -5,6 +5,8 @@
  */
 package com.kit.integrationmanager.model;
 
+import com.kit.integrationmanager.listener.EnumListener;
+
 /**
  *
  * @author anwar
@@ -24,7 +26,7 @@ public enum IncomeSourceEnum {
     OTHER
 }
 */
-public enum IncomeSourceEnum {
+public enum IncomeSourceEnum implements EnumListener {
 
     SELECT(1,"Select Income Source"),
     NONE(2,"None"),
@@ -42,6 +44,12 @@ public enum IncomeSourceEnum {
     private final String value;
     private final int id;
 
+    @Override
+    public String getDisplayValue() {
+        return this.value;
+    }
+
+    @Override
     public int getId() {
         return id;
     }

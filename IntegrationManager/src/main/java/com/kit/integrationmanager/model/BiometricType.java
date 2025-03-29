@@ -15,10 +15,12 @@ public enum BiometricType {
     RL;
 }
 */
+import com.kit.integrationmanager.listener.EnumListener;
+
 import java.util.ArrayList;
 import java.util.List;
 
-public enum BiometricType {
+public enum BiometricType implements EnumListener {
 
     PHOTO(1,"PHOTO"),
     LT(2,"LT"),
@@ -35,6 +37,12 @@ public enum BiometricType {
 
     private final String value;
 
+    @Override
+    public String getDisplayValue() {
+        return this.value;
+    }
+
+    @Override
     public int getId() {
         return id;
     }

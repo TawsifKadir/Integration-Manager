@@ -5,11 +5,13 @@
  */
 package com.kit.integrationmanager.model;
 
+import com.kit.integrationmanager.listener.EnumListener;
+
 /**
  *
  * @author anwar
  */
-public enum StatusEnum {
+public enum StatusEnum implements EnumListener {
     ACTIVE(1,"Active","Active"),
     INACTIVE(2,"Inactive","Inactive");
 
@@ -22,6 +24,12 @@ public enum StatusEnum {
         Txt = txt;
     }
 
+    @Override
+    public String getDisplayValue() {
+        return this.value;
+    }
+
+    @Override
     public int getId() {
         return id;
     }

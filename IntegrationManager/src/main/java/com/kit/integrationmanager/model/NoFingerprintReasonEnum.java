@@ -19,10 +19,12 @@ public enum NoFingerprintReasonEnum {
 
 }
 */
+import com.kit.integrationmanager.listener.EnumListener;
+
 import java.util.ArrayList;
 import java.util.List;
 
-public enum NoFingerprintReasonEnum {
+public enum NoFingerprintReasonEnum implements EnumListener {
     SELECT(0, "Select Reason"),
     NoFingerprintImpression(1, "NoFingerprintImpression"),
     NoFinger(2, "NoFinger"),
@@ -39,6 +41,12 @@ public enum NoFingerprintReasonEnum {
         this.value = value;
     }
 
+    @Override
+    public String getDisplayValue() {
+        return this.value;
+    }
+
+    @Override
     public int getId() {
         return id;
     }

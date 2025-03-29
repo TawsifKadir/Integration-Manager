@@ -35,10 +35,12 @@ public enum SelectionReasonEnum {
 
  */
 
+import com.kit.integrationmanager.listener.EnumListener;
+
 import java.util.ArrayList;
 import java.util.List;
 
-public enum SelectionReasonEnum {
+public enum SelectionReasonEnum implements EnumListener {
 
     SELECT(1,"Select Selection Reason"),
     LIPW_REASON_1(2,"Poor household with no sufficient income to sustain the household"),
@@ -63,6 +65,12 @@ public enum SelectionReasonEnum {
         return value;
     }
 
+    @Override
+    public String getDisplayValue() {
+        return this.value;
+    }
+
+    @Override
     public int getId() {
         return id;
     }

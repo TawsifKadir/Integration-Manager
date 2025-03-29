@@ -5,6 +5,8 @@
  */
 package com.kit.integrationmanager.model;
 
+import com.kit.integrationmanager.listener.EnumListener;
+
 /**
  *
  * @author anwar
@@ -15,7 +17,7 @@ public enum GenderEnum {
     FEMALE
 }
  */
-public enum GenderEnum {
+public enum GenderEnum implements EnumListener {
 
     SELECT(1,"Select Gender"),
     MALE(2,"Male"),
@@ -23,6 +25,12 @@ public enum GenderEnum {
 
     private final String value;
 
+    @Override
+    public String getDisplayValue() {
+        return this.value;
+    }
+
+    @Override
     public int getId() {
         return id;
     }

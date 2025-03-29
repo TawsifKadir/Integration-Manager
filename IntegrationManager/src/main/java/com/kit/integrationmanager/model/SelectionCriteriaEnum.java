@@ -5,6 +5,8 @@
  */
 package com.kit.integrationmanager.model;
 
+import com.kit.integrationmanager.listener.EnumListener;
+
 /**
  *
  * @author anwar
@@ -15,7 +17,7 @@ public enum SelectionCriteriaEnum {
     DIS
 }
 */
-public enum SelectionCriteriaEnum {
+public enum SelectionCriteriaEnum implements EnumListener {
 
     SELECT(1,"Select Selection Criteria","Select Selection Criteria"),
     LIPW(2,"LIPW","LIPW"),
@@ -31,6 +33,12 @@ public enum SelectionCriteriaEnum {
         Txt = txt;
     }
 
+    @Override
+    public String getDisplayValue() {
+        return this.value;
+    }
+
+    @Override
     public int getId() {
         return id;
     }
