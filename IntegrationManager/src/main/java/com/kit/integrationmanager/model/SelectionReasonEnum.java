@@ -110,6 +110,29 @@ public enum SelectionReasonEnum implements EnumListener {
         return list.toArray(new String[0]);
     }
 
+    public static List<SelectionReasonEnum> getLipwReasons(boolean includeSelect) {
+        List<SelectionReasonEnum> lipwReasons = new ArrayList<>();
+        for (SelectionReasonEnum reason : values()) {
+            // Include "SELECT" or filter based on "lipw"
+            if ((includeSelect && reason == SELECT) || reason.name().toLowerCase().contains("lipw")) {
+                lipwReasons.add(reason);
+            }
+        }
+        return lipwReasons;
+    }
+
+    public static List<SelectionReasonEnum> getDisReasons(boolean includeSelect) {
+        List<SelectionReasonEnum> disReasons = new ArrayList<>();
+        for (SelectionReasonEnum reason : values()) {
+            // Include "SELECT" or filter based on "dis"
+            if ((includeSelect && reason == SELECT) || reason.name().toLowerCase().contains("dis")) {
+                disReasons.add(reason);
+            }
+        }
+        return disReasons;
+    }
+
+
     public static SelectionReasonEnum find(String value) {
         for (SelectionReasonEnum reason : SelectionReasonEnum.values()) {
             if (reason.getValue().equals(value)) {
