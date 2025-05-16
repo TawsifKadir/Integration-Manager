@@ -5,11 +5,13 @@
  */
 package com.kit.integrationmanager.model;
 
+import com.kit.integrationmanager.listener.EnumListener;
+
 /**
  *
  * @author anwar
  */
-public enum OccupationEnum {
+public enum OccupationEnum implements EnumListener {
 
     SELECT(0,"Select an Occupation"),
     FORMAL_JOB(1,"Formal Job"),
@@ -26,6 +28,12 @@ public enum OccupationEnum {
     private final String value;
     private int id;
 
+    @Override
+    public String getDisplayValue() {
+        return this.value;
+    }
+
+    @Override
     public int getId() {
         return id;
     }

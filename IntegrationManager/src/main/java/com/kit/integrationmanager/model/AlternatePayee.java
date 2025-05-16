@@ -1,22 +1,53 @@
 package com.kit.integrationmanager.model;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.gson.annotations.SerializedName;
+
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.util.List;
 
 @Data
+@NoArgsConstructor
 public class AlternatePayee {
-    private String payeeFirstName = null;
-    private String payeeMiddleName = null;
-    private String payeeLastName = null;
-    private String payeeNickName = null;
-    private Integer payeeAge = null;
-    private GenderEnum payeeGender = null;
-    private DocumentTypeEnum documentType = null;
-    private String documentTypeOther = null;
-    private RelationshipEnum relationshipWithHouseholdHead = null;
-    private String relationshipOther = null;
-    private String nationalId = null;
-    private String payeePhoneNo = null;
-    private List<Biometric> biometrics = null;
+    @JsonProperty("payeeFirstName")
+    @SerializedName("payeeFirstName")
+    private String payeeFirstName;
+    @JsonProperty("payeeMiddleName")
+    @SerializedName("payeeMiddleName")
+    private String payeeMiddleName;
+    @JsonProperty("payeeLastName")
+    @SerializedName("payeeLastName")
+    private String payeeLastName;
+    @JsonProperty("payeeNickName")
+    @SerializedName("payeeNickName")
+    private String payeeNickName;
+    @JsonProperty("payeeAge")
+    @SerializedName("payeeAge")
+    private Integer payeeAge;
+    @JsonProperty("payeeGender")
+    @SerializedName("payeeGender")
+    private GenderEnum payeeGender;
+    @JsonProperty("documentType")
+    @SerializedName("documentType")
+    private DocumentTypeEnum documentType;
+    @JsonProperty("documentTypeOther")
+    @SerializedName("documentTypeOther")
+    private String documentTypeOther;
+    @JsonProperty("relationshipWithHouseholdHead")
+    @SerializedName("relationshipWithHouseholdHead")
+    private RelationshipEnum relationshipWithHouseholdHead;
+    @JsonProperty("relationshipOther")
+    @SerializedName("relationshipOther")
+    private String relationshipOther;
+    @JsonProperty("nationalId")
+    @SerializedName("nationalId")
+    private String nationalId;
+    @JsonProperty("payeePhoneNo")
+    @SerializedName("payeePhoneNo")
+    private String payeePhoneNo;
+    @JsonProperty("biometrics")
+    @SerializedName("biometrics")
+    private List<Biometric> biometrics;
 }

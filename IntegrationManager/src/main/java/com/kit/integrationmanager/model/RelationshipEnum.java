@@ -5,6 +5,8 @@
  */
 package com.kit.integrationmanager.model;
 
+import com.kit.integrationmanager.listener.EnumListener;
+
 /**
  *
  * @author anwar
@@ -27,7 +29,7 @@ public enum RelationshipEnum {
 
  */
 
-public enum RelationshipEnum {
+public enum RelationshipEnum implements EnumListener {
 
     SELECT(1,"Select Relationship"),
     HOUSEHOLD_HEAD(2,"Household head"),
@@ -51,6 +53,12 @@ public enum RelationshipEnum {
         this.value = value;
     }
 
+    @Override
+    public String getDisplayValue() {
+        return this.value;
+    }
+
+    @Override
     public int getId() {
         return id;
     }

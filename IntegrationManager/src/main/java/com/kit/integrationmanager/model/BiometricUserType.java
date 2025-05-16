@@ -1,6 +1,8 @@
 package com.kit.integrationmanager.model;
 
-public enum BiometricUserType {
+import com.kit.integrationmanager.listener.EnumListener;
+
+public enum BiometricUserType implements EnumListener {
 
     BENEFICIARY(1,"BENEFICIARY","BENEFICIARY"),
     NOMINEE(2,"NOMINEE","NOMINEE"),
@@ -16,6 +18,12 @@ public enum BiometricUserType {
         Txt = txt;
     }
 
+    @Override
+    public String getDisplayValue() {
+        return this.value;
+    }
+
+    @Override
     public int getId() {
         return id;
     }

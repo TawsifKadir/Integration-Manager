@@ -1,6 +1,8 @@
 package com.kit.integrationmanager.model;
 
-public enum DocumentTypeEnum {
+import com.kit.integrationmanager.listener.EnumListener;
+
+public enum DocumentTypeEnum implements EnumListener {
 
     PASSPORT(1,"Passport","Passport"),
     NATIONAL_ID(2,"National Id","National Id"),
@@ -22,6 +24,12 @@ public enum DocumentTypeEnum {
         return value;
     }
 
+    @Override
+    public String getDisplayValue() {
+        return this.value;
+    }
+
+    @Override
     public int getId() {
         return id;
     }

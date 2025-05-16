@@ -5,6 +5,8 @@
  */
 package com.kit.integrationmanager.model;
 
+import com.kit.integrationmanager.listener.EnumListener;
+
 /**
  *
  * @author anwar
@@ -15,7 +17,7 @@ public enum GenderEnum {
     FEMALE
 }
  */
-public enum NomineeOccupationEnum {
+public enum NomineeOccupationEnum implements EnumListener {
     SELECT(1,"Select Nominee Occupation"),
     FORMAL_JOB(2,"Employed in a formal job"),
     CASUAL_WORK_OR_DAILY_WAGE_LABOR(3,"Casual work or daily wage labor"),
@@ -31,6 +33,12 @@ public enum NomineeOccupationEnum {
     private final String value;
     private final int id;
 
+    @Override
+    public String getDisplayValue() {
+        return this.value;
+    }
+
+    @Override
     public int getId() {
         return id;
     }

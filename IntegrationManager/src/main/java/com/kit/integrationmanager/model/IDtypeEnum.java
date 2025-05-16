@@ -5,6 +5,8 @@
  */
 package com.kit.integrationmanager.model;
 
+import com.kit.integrationmanager.listener.EnumListener;
+
 /**
  *
  * @author anwar
@@ -15,7 +17,7 @@ public enum GenderEnum {
     FEMALE
 }
  */
-public enum IDtypeEnum {
+public enum IDtypeEnum implements EnumListener {
     SELECT(1,"Select ID Type"),
     PASSPORT(2,"Passport"),
     NATIONAL_ID(3,"National Id"),
@@ -24,6 +26,12 @@ public enum IDtypeEnum {
     private final String value;
     private final int id;
 
+    @Override
+    public String getDisplayValue() {
+        return this.value;
+    }
+
+    @Override
     public int getId() {
         return id;
     }

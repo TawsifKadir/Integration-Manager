@@ -5,6 +5,8 @@
  */
 package com.kit.integrationmanager.model;
 
+import com.kit.integrationmanager.listener.EnumListener;
+
 /**
  *
  * @author anwar
@@ -18,7 +20,7 @@ public enum MaritalStatusEnum {
     DIVORCE
 }
  */
-public enum MaritalStatusEnum {
+public enum MaritalStatusEnum implements EnumListener {
 
     SELECT(1,"Select Marital Status"),
     SINGLE(2,"Single"),
@@ -29,6 +31,12 @@ public enum MaritalStatusEnum {
 
     private final String value;
 
+    @Override
+    public String getDisplayValue() {
+        return this.value;
+    }
+
+    @Override
     public int getId() {
         return id;
     }

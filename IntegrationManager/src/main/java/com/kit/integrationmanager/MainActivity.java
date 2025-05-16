@@ -1,300 +1,161 @@
 package com.kit.integrationmanager;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.content.Context;
+import android.os.Build;
 import android.os.Bundle;
-import android.provider.Settings;
 import android.util.Log;
 import android.view.View;
+import android.view.WindowManager;
 import android.widget.Button;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.kit.integrationmanager.model.Address;
-import com.kit.integrationmanager.model.Beneficiary;
-import com.kit.integrationmanager.model.Device;
-import com.kit.integrationmanager.model.Location;
+import com.kit.databasemanager.dao.PayrollDataDao;
+import com.kit.databasemanager.dao.PayrollTransactionDao;
+
+import com.kit.databasemanager.database.PaymentDatabase;
+import com.kit.databasemanager.model.PayrollBiometricEO;
+import com.kit.databasemanager.model.PayrollDataEO;
+import com.kit.databasemanager.model.PayrollEO;
+import com.kit.integrationmanager.event.DownloadProgressEvent;
+import com.kit.integrationmanager.model.AlternatePayee;
 import com.kit.integrationmanager.model.Login;
+import com.kit.integrationmanager.model.Payroll;
+import com.kit.integrationmanager.model.PayrollAlternate;
+import com.kit.integrationmanager.model.PayrollReconcile;
 import com.kit.integrationmanager.model.ServerInfo;
-import com.kit.integrationmanager.payload.RegistrationResult;
-import com.kit.integrationmanager.payload.RegistrationStatus;
-import com.kit.integrationmanager.payload.device.request.RegisterDeviceRequest;
-import com.kit.integrationmanager.payload.device.response.RegisterDeviceResponse;
-import com.kit.integrationmanager.payload.login.request.LoginRequest;
-import com.kit.integrationmanager.payload.login.response.LoginResponse;
-import com.kit.integrationmanager.payload.reset.request.ResetPassRequest;
-import com.kit.integrationmanager.payload.reset.response.ResetPassResponse;
+
+import com.kit.integrationmanager.payload.download.request.PayrollRequest;
+import com.kit.integrationmanager.payload.download.response.PayrollResponse;
+
+import com.kit.integrationmanager.payload.reconcile.request.PayrollReconcileBatchRequest;
+import com.kit.integrationmanager.payload.reconcile.request.PayrollReconcileRequest;
+import com.kit.integrationmanager.payload.reconcile.response.PayrollReconcileBatchResponse;
+import com.kit.integrationmanager.payload.reconcile.response.PayrollReconcileResponse;
 import com.kit.integrationmanager.service.DeviceManager;
-import com.kit.integrationmanager.service.DeviceRegistrationServiceImpl;
-import com.kit.integrationmanager.service.IntegrationManager;
-import com.kit.integrationmanager.service.DeviceRegistrationService;
+import com.kit.integrationmanager.service.DownloadService;
+import com.kit.integrationmanager.service.DownloadServiceImpl;
+import com.kit.integrationmanager.service.PayrollReconService;
+import com.kit.integrationmanager.service.PayrollReconServiceImpl;
+import com.kit.integrationmanager.test.UpdateBeneficiary;
+import com.kit.integrationmanager.test.UpdateBeneficiaryStatus;
 
-import com.kit.integrationmanager.service.LoginService;
-import com.kit.integrationmanager.service.LoginServiceImpl;
-import com.kit.integrationmanager.service.OnlineIntegrationManager;
-import com.kit.integrationmanager.store.AuthStore;
 
-import java.io.BufferedReader;
+import org.reactivestreams.Subscriber;
+import org.reactivestreams.Subscription;
+
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Observable;
-import java.util.Observer;
+import java.util.concurrent.Callable;
 
-public class MainActivity extends AppCompatActivity implements Observer {
+
+import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
+import io.reactivex.rxjava3.core.Completable;
+import io.reactivex.rxjava3.core.CompletableEmitter;
+import io.reactivex.rxjava3.core.CompletableObserver;
+import io.reactivex.rxjava3.core.CompletableOnSubscribe;
+import io.reactivex.rxjava3.core.Observable;
+import io.reactivex.rxjava3.core.ObservableEmitter;
+import io.reactivex.rxjava3.core.Observer;
+import io.reactivex.rxjava3.disposables.CompositeDisposable;
+import io.reactivex.rxjava3.disposables.Disposable;
+import io.reactivex.rxjava3.schedulers.Schedulers;
+
+public class MainActivity extends AppCompatActivity {
 
     private ObjectMapper mapper = null;
     private Login mLogin = null;
     private String mAuthToken = null;
 
     private String UniqueID = null;
+
+    private Subscriber<DownloadProgressEvent> progressSubscriber;
+
+    private CompositeDisposable mDisposables;
+    private ServerInfo mServerInfo;
+
+    private HashMap<String, String> mHeaders;
+
+
+
     private String TAG = "OnlineIntegratioManagerTestActivity";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        Button registerBtn = (Button)findViewById(R.id.registerBtn);
-        Button loginBtn = (Button)findViewById(R.id.loginBtn);
-        Button resetBtn = (Button)findViewById(R.id.resetPassBtn);
-        Button registerDeviceBtn = (Button)findViewById(R.id.registerDeviceBtn);
+
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+
+        Button editBeneficiaryBtn = (Button)findViewById(R.id.editBeneficiaryBtn);
+        Button getBeneficiaryEditStatus = (Button)findViewById(R.id.getBeneficiaryStatusBtn);
 
         UniqueID = DeviceManager.getInstance(MainActivity.this).getDeviceUniqueID();
         Log.d(TAG,"Device unique ID is : "+UniqueID);
         Log.d(TAG,"Is Device online : "+DeviceManager.getInstance(this).isOnline());
+
+        mDisposables = new CompositeDisposable();
+
+        mServerInfo = new ServerInfo();
+        mServerInfo.setPort(8090);
+        mServerInfo.setProtocol("http");
+        mServerInfo.setHost_name("dev.karoothitbd.com");
+
+        mHeaders = new HashMap<>();
+        mHeaders.put("Authorization", "Bearer eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJzaG92b24iLCJpYXQiOjE3MDg4ODY5OTYsImV4cCI6MTg2NjU2Njk5Nn0.L-75R-EYM1GbrAqj-KdRpWLjxfxCMdVsAboepITEnI2I6AtTUtRhTgQaevzb5GOLWPnGaAUzggcC6SsArnMj-g");
+        mHeaders.put("DeviceId", "29feb6211b04-a56d-7d6a-e79e-018b2f19");
+
+        UpdateBeneficiary updateBeneficiaryProcessor = new UpdateBeneficiary(MainActivity.this,mServerInfo,mHeaders,true);
+
+        editBeneficiaryBtn.setOnClickListener(updateBeneficiaryProcessor);
+
+        UpdateBeneficiaryStatus updateBeneficiaryStatusProcessor = new UpdateBeneficiaryStatus(MainActivity.this,mServerInfo,mHeaders);
+
+        getBeneficiaryEditStatus.setOnClickListener(updateBeneficiaryStatusProcessor);
+
         mapper = new ObjectMapper();
-        registerBtn.setOnClickListener(new View.OnClickListener() {
+
+    }
+
+
+    public void update(Observable o, Object arg) {
+
+    }
+
+
+
+
+
+    private Observable<PayrollReconcileBatchRequest> readPayrollReconcileJson(Context context) {
+
+        Observable<PayrollReconcileBatchRequest> nowObservable = new Observable<PayrollReconcileBatchRequest>() {
             @Override
-            public void onClick(View v) {
+            protected void subscribeActual(@NonNull Observer<? super PayrollReconcileBatchRequest> observer) {
+                PayrollReconcileBatchRequest payrollReconcileBatchRequest = null;
+
                 try {
 
-                    InputStream is = getResources().openRawResource(R.raw.batch_reg);
-                    BufferedReader br = new BufferedReader(new InputStreamReader(is, "UTF-8"));
-//                    Beneficiary beneficiary = mapper.readValue(br, Beneficiary.class);
-                    ////https://snsopafis.southsudansafetynet.info/afis/swagger-ui.html
-                    List<Beneficiary> beneficiaries = mapper.readValue(br,new TypeReference<List<Beneficiary>>(){});
-                    ServerInfo serverInfo = new ServerInfo();
-                    serverInfo.setPort(443);
-                    serverInfo.setProtocol("https");
-                    serverInfo.setHost_name("snsopafis.southsudansafetynet.info");
-                    HashMap<String,String> headers = new HashMap<>();
-                    headers.put("Authorization","Bearer eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJzaG92b24iLCJpYXQiOjE3MDg4ODY5OTYsImV4cCI6MTg2NjU2Njk5Nn0.L-75R-EYM1GbrAqj-KdRpWLjxfxCMdVsAboepITEnI2I6AtTUtRhTgQaevzb5GOLWPnGaAUzggcC6SsArnMj-g");
-                    headers.put("DeviceId","d5a58ff3-dc14-4333-8076-72b0fb4cab7a");
-                    IntegrationManager integrationManager = new OnlineIntegrationManager(MainActivity.this,MainActivity.this,serverInfo);
-                    integrationManager.syncRecords(beneficiaries,headers);
-                }catch (Exception ex){
-                    Log.e(TAG,"Error while sending data : "+ex.getMessage());
-                    ex.printStackTrace();
+                    InputStream inputStream = context.getResources().openRawResource(R.raw.payroll_reconcile_request);
+                    ObjectMapper objectMapper = new ObjectMapper();
+                    payrollReconcileBatchRequest = objectMapper.readValue(inputStream, PayrollReconcileBatchRequest.class);
+
+                } catch (Throwable t) {
+                    observer.onError(t);
+                    observer.onComplete();
                 }
+
+                observer.onNext(payrollReconcileBatchRequest);
+                observer.onComplete();
             }
-        });
+        };
 
-        loginBtn.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                try{
 
-                    if(DeviceManager.getInstance(MainActivity.this).isOnline()){
-                        mLogin = new Login();
-                        mLogin.setUserName("fakadir_23");
-                        mLogin.setPassword("f230878");
-                        mLogin.setDeviceID("47951385-a13f-409a-9a79-c4aaef0e3f9b");
-
-                        ServerInfo serverInfo = new ServerInfo();
-                        serverInfo.setPort(8090);
-                        serverInfo.setProtocol("http");
-                        serverInfo.setHost_name("snsopafis.karoothitbd.com");
-                        HashMap<String,String> headers = new HashMap<>();
-                        ///headers.put("Authorization","Bearer eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJ1c2VyMSIsImlhdCI6MTcwNzkyODUwOCwiZXhwIjoxODY1NjA4NTA4fQ.yRgZYaP2WlSoTtP8ZjhFLCTD3_Ov7SZtVLzrWG9BK7qDrXSCIlMwJM5kS0HDyrD1_qNbJFPm8Hz9KlkFGDfQ7Q");
-                        headers.put("DeviceId",mLogin.getDeviceID());
-
-                        LoginRequest loginRequest = LoginRequest.builder().userName(mLogin.getUserName()).password(mLogin.getPassword()).deviceId(mLogin.getDeviceID()).build();
-
-                        LoginService loginService = new LoginServiceImpl(MainActivity.this,MainActivity.this,serverInfo);
-
-                        loginService.doOnlineLogin(loginRequest,headers);
-                    }else {
-                        AuthStore mAuthStore = AuthStore.getInstance(MainActivity.this);
-                        mLogin = mAuthStore.getLoginInfoFromCache();
-                        if(mLogin==null){
-                            Log.e(TAG,"No cache available for offline login");
-                        }else {
-                            boolean authResult = AuthStore.getInstance(MainActivity.this).doOfflineAuthentication("fakadir_23",
-                                    "f230878", "47951385-a13f-409a-9a79-c4aaef0e3f9b");
-                            if(authResult){
-                                Log.d(TAG,"Login Successful");
-                            }else{
-                                Log.e(TAG,"Login Error");
-                            }
-                        }
-                    }
-                }catch(Exception exc){
-                    Log.e(TAG,"Error while sending data : "+exc.getMessage());
-                    exc.printStackTrace();
-                }
-            }
-        });
-
-        registerDeviceBtn.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                try{
-                    ServerInfo serverInfo = new ServerInfo();
-                    serverInfo.setPort(8090);
-                    serverInfo.setProtocol("http");
-                    serverInfo.setHost_name("snsopafis.karoothitbd.com");
-
-                    HashMap<String,String> headers = new HashMap<>();
-
-                    ///headers.put("Authorization","Bearer "+mAuthToken);
-                    ///headers.put("DeviceId","47951385-a13f-409a-9a79-c4aaef0e3f9b");
-
-                    Address address = new Address();
-                    Location location = new Location();
-
-                    address.setStateId(1);
-                    address.setCountyId(1);
-                    address.setPayam(1);
-                    address.setBoma(1);
-
-                    location.setLat(1.0);
-                    location.setLon(1.0);
-
-                    RegisterDeviceRequest registerDeviceRequest = RegisterDeviceRequest.builder().address(address)
-                            .location(location).deviceId(DeviceManager.getInstance(MainActivity.this).getDeviceUniqueID())
-                            .imei("").build();
-
-                    DeviceRegistrationService deviceRegistrationService = new DeviceRegistrationServiceImpl(MainActivity.this,MainActivity.this,serverInfo);
-
-                    deviceRegistrationService.registerDevice(registerDeviceRequest,headers);
-
-                }catch(Exception exc){
-                    Log.e(TAG,"Error while sending data : "+exc.getMessage());
-                    exc.printStackTrace();
-                }
-            }
-        });
-
-        resetBtn.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                try{
-                    ServerInfo serverInfo = new ServerInfo();
-                    serverInfo.setPort(8090);
-                    serverInfo.setProtocol("http");
-                    mLogin.setPassword("f230878");
-                    serverInfo.setHost_name("snsopafis.karoothitbd.com");
-                    HashMap<String,String> headers = new HashMap<>();
-                    headers.put("Authorization","Bearer "+mAuthToken);
-                    headers.put("DeviceId","47951385-a13f-409a-9a79-c4aaef0e3f9b");
-
-                    ResetPassRequest resetPassRequest = ResetPassRequest.builder().newPassword(mLogin.getPassword()).build();
-
-                    LoginService loginService = new LoginServiceImpl(MainActivity.this,MainActivity.this,serverInfo);
-
-                    loginService.doResetPassword(resetPassRequest,headers);
-
-                }catch(Exception exc){
-                    Log.e(TAG,"Error while sending data : "+exc.getMessage());
-                    exc.printStackTrace();
-                }
-            }
-        });
+        return nowObservable;
     }
 
-    @Override
-    public void update(Observable o, Object arg) {
-        try{
-            ObjectMapper mapper = new ObjectMapper();
-
-            Log.d(TAG, "Received update>>>>");
-
-            if (arg == null) {
-                Log.e(TAG, "Received null parameter in update. Returning...");
-                return;
-            }
-
-            if(arg instanceof LoginResponse){
-                LoginResponse loginResponse = (LoginResponse)arg;
-                try{
-                    String data = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(loginResponse);
-                    Log.d(TAG,"JSON Formatted Login Response: "+data);
-                }catch(JsonProcessingException exc){
-                    Log.e(TAG,"JSON Parse Exception.");
-                    exc.printStackTrace();
-                }
-
-                if(loginResponse.isOperationResult()){
-                    if("ACTIVE".equalsIgnoreCase(loginResponse.getStatus())){
-                        mAuthToken = loginResponse.getToken();
-                        AuthStore.getInstance(MainActivity.this).saveLoginInfoToCache(MainActivity.this.mLogin);
-                        AuthStore.getInstance(MainActivity.this).setAuthToken(mAuthToken);
-                        Log.d(TAG,"Online Authentication Successful");
-                        ////Success - Login the user and go to dashboard
-                    }else if("PENDING".equalsIgnoreCase(loginResponse.getStatus())){
-                        mAuthToken = loginResponse.getToken();
-                        Log.d(TAG,"Received authentication token : "+mAuthToken);
-                        ///User needs to Reset Password
-                    }
-                }
-                Log.d(TAG,"Received login request update");
-            }else if(arg instanceof ResetPassResponse){
-                ResetPassResponse resetPassResponse = (ResetPassResponse)arg;
-                try{
-                    String data = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(resetPassResponse);
-                    Log.d(TAG,"JSON Formatted Reset Password Response: "+data);
-                }catch(JsonProcessingException exc){
-                    Log.e(TAG,"JSON Parse Exception.");
-                    exc.printStackTrace();
-                }
-
-
-                if(resetPassResponse.isOperationResult()){
-                    if(AuthStore.getInstance(MainActivity.this).saveLoginInfoToCache(mLogin)) {
-                        AuthStore.getInstance(MainActivity.this).setAuthToken(mAuthToken);
-                    }
-                    Log.d(TAG,"Password reset successful");
-                    ///Successful. Take user back to Login Page
-
-                }
-
-            }else if(arg instanceof RegistrationResult){
-                Log.d(TAG, "Received parameter in update.");
-                RegistrationResult registrationResult = (RegistrationResult) arg;
-                if (registrationResult.getSyncStatus() == RegistrationStatus.SUCCESS) {
-
-                    Log.d(TAG, "Registration Successfull");
-
-                    List<String> appIds = registrationResult.getApplicationIds();
-                    if (appIds == null) {
-                        Log.e(TAG, "No beneficiary list received. Returning ... ");
-                        return;
-                    }
-
-                    Log.d(TAG, "Registered following users: ");
-                    for (String nowId : appIds) {
-                        Log.d(TAG, "Beneficiary ID : " + nowId);
-                    }
-
-                } else {
-                    Log.d(TAG, "Registration Failed");
-                    Log.d(TAG, "Error code : "+String.valueOf(registrationResult.getSyncStatus().getErrorCode()));
-                    Log.d(TAG, "Error Msg : "+registrationResult.getSyncStatus().getErrorMsg());
-                }
-            }else if(arg instanceof RegisterDeviceResponse){
-                try{
-                    RegisterDeviceResponse registerDeviceResponse = (RegisterDeviceResponse)arg;
-                    String data = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(registerDeviceResponse);
-                    Log.d(TAG,"JSON Formatted Register Device Response: "+data);
-                }catch(JsonProcessingException exc){
-                    Log.e(TAG,"JSON Parse Exception.");
-                    exc.printStackTrace();
-                }
-            }
-        }catch(Exception exc){
-            Log.e(TAG,"Error while processing update : "+exc.getMessage());
-        }
-    }
 }

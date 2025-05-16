@@ -35,10 +35,12 @@ public enum SelectionReasonEnum {
 
  */
 
+import com.kit.integrationmanager.listener.EnumListener;
+
 import java.util.ArrayList;
 import java.util.List;
 
-public enum SelectionReasonEnum {
+public enum SelectionReasonEnum implements EnumListener {
 
     SELECT(1,"Select Selection Reason"),
     LIPW_REASON_1(2,"Poor household with no sufficient income to sustain the household"),
@@ -63,6 +65,12 @@ public enum SelectionReasonEnum {
         return value;
     }
 
+    @Override
+    public String getDisplayValue() {
+        return this.value;
+    }
+
+    @Override
     public int getId() {
         return id;
     }
@@ -101,6 +109,29 @@ public enum SelectionReasonEnum {
         }
         return list.toArray(new String[0]);
     }
+
+    public static List<SelectionReasonEnum> getLipwReasons(boolean includeSelect) {
+        List<SelectionReasonEnum> lipwReasons = new ArrayList<>();
+        for (SelectionReasonEnum reason : values()) {
+            // Include "SELECT" or filter based on "lipw"
+            if ((includeSelect && reason == SELECT) || reason.name().toLowerCase().contains("lipw")) {
+                lipwReasons.add(reason);
+            }
+        }
+        return lipwReasons;
+    }
+
+    public static List<SelectionReasonEnum> getDisReasons(boolean includeSelect) {
+        List<SelectionReasonEnum> disReasons = new ArrayList<>();
+        for (SelectionReasonEnum reason : values()) {
+            // Include "SELECT" or filter based on "dis"
+            if ((includeSelect && reason == SELECT) || reason.name().toLowerCase().contains("dis")) {
+                disReasons.add(reason);
+            }
+        }
+        return disReasons;
+    }
+
 
     public static SelectionReasonEnum find(String value) {
         for (SelectionReasonEnum reason : SelectionReasonEnum.values()) {

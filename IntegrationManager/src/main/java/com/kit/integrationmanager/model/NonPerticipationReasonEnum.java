@@ -31,10 +31,12 @@ public enum NonPerticipationReasonEnum {
 }
 
  */
+import com.kit.integrationmanager.listener.EnumListener;
+
 import java.util.ArrayList;
 import java.util.List;
 
-public enum NonPerticipationReasonEnum {
+public enum NonPerticipationReasonEnum implements EnumListener {
 
     SELECT(1,"Select Non Participation Reason"),
     REASON_1(2,"All other eligible household members have other commitments that occupy their time"),
@@ -47,6 +49,12 @@ public enum NonPerticipationReasonEnum {
 
     private final String value;
 
+    @Override
+    public String getDisplayValue() {
+        return this.value;
+    }
+
+    @Override
     public int getId() {
         return id;
     }

@@ -5,6 +5,8 @@
  */
 package com.kit.integrationmanager.model;
 
+import com.kit.integrationmanager.listener.EnumListener;
+
 /**
  *
  * @author anwar
@@ -17,7 +19,7 @@ public enum CurrencyEnum {
     EURO
 }
 */
-public enum CurrencyEnum {
+public enum CurrencyEnum implements EnumListener {
 
     SELECT(1,"Select Currency"),
     SUDANESE_POUND(2,"Sudanese pound"),
@@ -28,6 +30,12 @@ public enum CurrencyEnum {
     private final String value;
     private final int id;
 
+    @Override
+    public String getDisplayValue() {
+        return this.value;
+    }
+
+    @Override
     public int getId() {
         return id;
     }

@@ -5,6 +5,8 @@
  */
 package com.kit.integrationmanager.model;
 
+import com.kit.integrationmanager.listener.EnumListener;
+
 /**
  *
  * @author anwar
@@ -17,7 +19,7 @@ public enum LegalStatusEnum {
     IDP
 }
 */
-public enum LegalStatusEnum {
+public enum LegalStatusEnum implements EnumListener {
 
     SELECT(1,"Select Legal Status"),
     HOST(2,"Host"),
@@ -28,6 +30,12 @@ public enum LegalStatusEnum {
     private final String value;
     private final int id;
 
+    @Override
+    public String getDisplayValue() {
+        return this.value;
+    }
+
+    @Override
     public int getId() {
         return id;
     }
