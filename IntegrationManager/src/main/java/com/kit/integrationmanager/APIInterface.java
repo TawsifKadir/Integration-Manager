@@ -7,7 +7,9 @@ import com.kit.integrationmanager.payload.BatchRegistrationResponse;
 import com.kit.integrationmanager.payload.BatchRegistrationResponseV2;
 import com.kit.integrationmanager.payload.device.request.RegisterDeviceRequest;
 import com.kit.integrationmanager.payload.device.response.RegisterDeviceResponse;
+import com.kit.integrationmanager.payload.download.request.BeneficiaryDownloadRequest;
 import com.kit.integrationmanager.payload.download.request.PayrollLockRequest;
+import com.kit.integrationmanager.payload.download.response.BeneficiaryDownloadResponse;
 import com.kit.integrationmanager.payload.download.response.PayrollLockResponse;
 import com.kit.integrationmanager.payload.edit.request.BeneficiaryEditRequest;
 import com.kit.integrationmanager.payload.edit.request.BeneficiaryEditStatusRequest;
@@ -25,6 +27,7 @@ import com.kit.integrationmanager.payload.reset.request.ResetPassRequest;
 import com.kit.integrationmanager.payload.reset.response.ResetPassResponse;
 import com.kit.integrationmanager.payload.update.response.CheckUpdateResponse;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -35,6 +38,7 @@ import retrofit2.http.HeaderMap;
 import retrofit2.http.Headers;
 import retrofit2.http.POST;
 import retrofit2.http.Path;
+import retrofit2.http.Query;
 
 public interface APIInterface {
     @Headers({"READ_TIMEOUT:300", "WRITE_TIMEOUT:300"})
@@ -57,6 +61,9 @@ public interface APIInterface {
     @POST("/afis/api/beneficiary/update-status")
     Call<List<BeneficiaryEditStatusResponse>> getBeneficiaryEditStatus(@Body BeneficiaryEditStatusRequest beneficiaryEditStatusRequestList, @HeaderMap Map<String, String> headers);
 
+    @GET("afis/api/beneficiary/getBeneficiary/{bomaId}")
+    @Headers({"READ_TIMEOUT:300", "WRITE_TIMEOUT:300"})
+    Call<BeneficiaryDownloadResponse> getBeneficiaries(@Path("bomaId") String bomaId, @Query("page") int page, @Query("size") int size, @HeaderMap Map<String, String> headers);
 
     @POST("/afis/api/auth/login")
     Call<LoginResponse> login(@Body LoginRequest loginRequest, @HeaderMap Map<String, String> headers);

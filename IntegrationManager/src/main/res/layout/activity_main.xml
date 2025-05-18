@@ -8,21 +8,30 @@
     tools:context="com.kit.integrationmanager.MainActivity">
 
     <Button
-        android:id="@+id/editBeneficiaryBtn"
+        android:id="@+id/loginBtn"
         android:layout_width="match_parent"
         android:layout_height="50dp"
         android:paddingBottom="5dp"
         android:paddingTop="5dp"
         android:gravity="center_horizontal"
-        android:text="Edit Beneficiary" />
+        android:text="Login" />
 
     <Button
-        android:id="@+id/getBeneficiaryStatusBtn"
+        android:id="@+id/resetPasswordBtn"
         android:layout_width="match_parent"
         android:layout_height="50dp"
         android:paddingBottom="5dp"
         android:paddingTop="5dp"
         android:gravity="center_horizontal"
-        android:text="Get  Beneficiary Edit Status" />
+        android:text="Reset Password" />
+
+    <Button
+        android:id="@+id/getBeneficiariesBtn"
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:paddingBottom="5dp"
+        android:paddingTop="5dp"
+        android:gravity="center_horizontal"
+        android:text="Get Beneficiaries" />
 
 </LinearLayout>

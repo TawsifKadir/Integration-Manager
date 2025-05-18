@@ -5,6 +5,7 @@ import android.util.Log;
 
 import androidx.annotation.NonNull;
 
+import com.kit.GsonUtils;
 import com.kit.integrationmanager.interceptor.DownloadProgressInterceptor;
 import com.kit.integrationmanager.model.ServerInfo;
 
@@ -127,7 +128,7 @@ public class APIClient {
 
                  this.retrofit = new Retrofit.Builder()
                         .baseUrl(server_url)
-                        .addConverterFactory(GsonConverterFactory.create())
+                        .addConverterFactory(GsonConverterFactory.create(GsonUtils.getCustomGson()))
                         .client(httpClient)
                         .build();
 

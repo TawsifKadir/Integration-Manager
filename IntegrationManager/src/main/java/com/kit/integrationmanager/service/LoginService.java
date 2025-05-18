@@ -10,6 +10,6 @@ import java.util.HashMap;
 
 
 public interface LoginService {
-    public  LoginResponse doOnlineLogin(LoginRequest login, HashMap<String,String> headers);
-    public  ResetPassResponse doResetPassword(ResetPassRequest resetPassRequest, HashMap<String,String> headers);
+    LoginResponse doOnlineLogin(String username, String password, HashMap<String, String> headers);
+    ResetPassResponse doResetPassword(ResetPassRequest resetPassRequest, HashMap<String, String> headers);
 }

@@ -17,8 +17,8 @@ import java.util.HashMap;
 import io.reactivex.rxjava3.core.Observable;
 
 public interface DownloadService {
-    public Observable<PayrollResponse> loadPayrol(PayrollRequest payrollRequest, HashMap<String,String> headers, final Subscriber<DownloadProgressEvent> observeProgress);
-    public Observable<PayrollResponse> loadPayrolFromFile(Context context, Uri payrolFile);
-    public Observable<PayrollLockResponse> lockPayrol(PayrollLockRequest payrollLockRequest, HashMap<String,String> headers);
-    public void cancelPayrollLoading();
+    Observable<PayrollResponse> loadPayrol(PayrollRequest payrollRequest, HashMap<String, String> headers, final Subscriber<DownloadProgressEvent> observeProgress);
+    Observable<PayrollResponse> loadPayrolFromFile(Context context, Uri payrolFile);
+    Observable<PayrollLockResponse> lockPayrol(PayrollLockRequest payrollLockRequest, HashMap<String, String> headers);
+    void cancelPayrollLoading();
 }

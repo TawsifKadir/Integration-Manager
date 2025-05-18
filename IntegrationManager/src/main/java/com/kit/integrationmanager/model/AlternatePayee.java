@@ -50,4 +50,108 @@ public class AlternatePayee {
     @JsonProperty("biometrics")
     @SerializedName("biometrics")
     private List<Biometric> biometrics;
+
+    public String getPayeeFirstName() {
+        return payeeFirstName;
+    }
+
+    public void setPayeeFirstName(String payeeFirstName) {
+        this.payeeFirstName = payeeFirstName;
+    }
+
+    public String getPayeeMiddleName() {
+        return payeeMiddleName;
+    }
+
+    public void setPayeeMiddleName(String payeeMiddleName) {
+        this.payeeMiddleName = payeeMiddleName;
+    }
+
+    public String getPayeeLastName() {
+        return payeeLastName;
+    }
+
+    public void setPayeeLastName(String payeeLastName) {
+        this.payeeLastName = payeeLastName;
+    }
+
+    public String getPayeeNickName() {
+        return payeeNickName;
+    }
+
+    public void setPayeeNickName(String payeeNickName) {
+        this.payeeNickName = payeeNickName;
+    }
+
+    public Integer getPayeeAge() {
+        return payeeAge;
+    }
+
+    public void setPayeeAge(Integer payeeAge) {
+        this.payeeAge = payeeAge;
+    }
+
+    public GenderEnum getPayeeGender() {
+        return payeeGender;
+    }
+
+    public void setPayeeGender(GenderEnum payeeGender) {
+        this.payeeGender = payeeGender;
+    }
+
+    public DocumentTypeEnum getDocumentType() {
+        return documentType;
+    }
+
+    public void setDocumentType(DocumentTypeEnum documentType) {
+        this.documentType = documentType;
+    }
+
+    public String getDocumentTypeOther() {
+        return documentTypeOther;
+    }
+
+    public void setDocumentTypeOther(String documentTypeOther) {
+        this.documentTypeOther = documentTypeOther;
+    }
+
+    public RelationshipEnum getRelationshipWithHouseholdHead() {
+        return relationshipWithHouseholdHead;
+    }
+
+    public void setRelationshipWithHouseholdHead(RelationshipEnum relationshipWithHouseholdHead) {
+        this.relationshipWithHouseholdHead = relationshipWithHouseholdHead;
+    }
+
+    public String getRelationshipOther() {
+        return relationshipOther;
+    }
+
+    public void setRelationshipOther(String relationshipOther) {
+        this.relationshipOther = relationshipOther;
+    }
+
+    public String getNationalId() {
+        return nationalId;
+    }
+
+    public void setNationalId(String nationalId) {
+        this.nationalId = nationalId;
+    }
+
+    public String getPayeePhoneNo() {
+        return payeePhoneNo;
+    }
+
+    public void setPayeePhoneNo(String payeePhoneNo) {
+        this.payeePhoneNo = payeePhoneNo;
+    }
+
+    public List<Biometric> getBiometrics() {
+        return biometrics;
+    }
+
+    public void setBiometrics(List<Biometric> biometrics) {
+        this.biometrics = biometrics;
+    }
 }

@@ -1,161 +1,164 @@
 package com.kit.integrationmanager;
 
-import androidx.annotation.NonNull;
-import androidx.appcompat.app.AppCompatActivity;
-
 import android.content.Context;
-import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.Button;
+import android.widget.Toast;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.kit.databasemanager.dao.PayrollDataDao;
-import com.kit.databasemanager.dao.PayrollTransactionDao;
+import androidx.appcompat.app.AppCompatActivity;
 
-import com.kit.databasemanager.database.PaymentDatabase;
-import com.kit.databasemanager.model.PayrollBiometricEO;
-import com.kit.databasemanager.model.PayrollDataEO;
-import com.kit.databasemanager.model.PayrollEO;
-import com.kit.integrationmanager.event.DownloadProgressEvent;
-import com.kit.integrationmanager.model.AlternatePayee;
-import com.kit.integrationmanager.model.Login;
-import com.kit.integrationmanager.model.Payroll;
-import com.kit.integrationmanager.model.PayrollAlternate;
-import com.kit.integrationmanager.model.PayrollReconcile;
 import com.kit.integrationmanager.model.ServerInfo;
+import com.kit.integrationmanager.payload.download.request.BeneficiaryDownloadRequest;
+import com.kit.integrationmanager.payload.download.response.BeneficiaryDownloadResponse;
+import com.kit.integrationmanager.payload.login.response.LoginResponse;
+import com.kit.integrationmanager.payload.reset.response.ResetPassResponse;
+import com.kit.integrationmanager.service.BeneficiaryDownloadService;
+import com.kit.integrationmanager.service.BeneficiaryDownloadServiceImpl;
+import com.kit.integrationmanager.service.LoginServiceImpl;
 
-import com.kit.integrationmanager.payload.download.request.PayrollRequest;
-import com.kit.integrationmanager.payload.download.response.PayrollResponse;
-
-import com.kit.integrationmanager.payload.reconcile.request.PayrollReconcileBatchRequest;
-import com.kit.integrationmanager.payload.reconcile.request.PayrollReconcileRequest;
-import com.kit.integrationmanager.payload.reconcile.response.PayrollReconcileBatchResponse;
-import com.kit.integrationmanager.payload.reconcile.response.PayrollReconcileResponse;
-import com.kit.integrationmanager.service.DeviceManager;
-import com.kit.integrationmanager.service.DownloadService;
-import com.kit.integrationmanager.service.DownloadServiceImpl;
-import com.kit.integrationmanager.service.PayrollReconService;
-import com.kit.integrationmanager.service.PayrollReconServiceImpl;
-import com.kit.integrationmanager.test.UpdateBeneficiary;
-import com.kit.integrationmanager.test.UpdateBeneficiaryStatus;
-
-
-import org.reactivestreams.Subscriber;
-import org.reactivestreams.Subscription;
-
-import java.io.InputStream;
 import java.util.HashMap;
-import java.util.List;
-import java.util.concurrent.Callable;
+import java.util.Observable;
+import java.util.Observer;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
+public class MainActivity extends AppCompatActivity implements Observer {
 
-import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
-import io.reactivex.rxjava3.core.Completable;
-import io.reactivex.rxjava3.core.CompletableEmitter;
-import io.reactivex.rxjava3.core.CompletableObserver;
-import io.reactivex.rxjava3.core.CompletableOnSubscribe;
-import io.reactivex.rxjava3.core.Observable;
-import io.reactivex.rxjava3.core.ObservableEmitter;
-import io.reactivex.rxjava3.core.Observer;
-import io.reactivex.rxjava3.disposables.CompositeDisposable;
-import io.reactivex.rxjava3.disposables.Disposable;
-import io.reactivex.rxjava3.schedulers.Schedulers;
-
-public class MainActivity extends AppCompatActivity {
-
-    private ObjectMapper mapper = null;
-    private Login mLogin = null;
-    private String mAuthToken = null;
-
-    private String UniqueID = null;
-
-    private Subscriber<DownloadProgressEvent> progressSubscriber;
-
-    private CompositeDisposable mDisposables;
-    private ServerInfo mServerInfo;
-
+    private static final String TAG = "MainActivity";
+    private final ExecutorService executorService = Executors.newFixedThreadPool(2);
     private HashMap<String, String> mHeaders;
-
-
-
-    private String TAG = "OnlineIntegratioManagerTestActivity";
+    private ServerInfo mServerInfo;
+    private String authToken;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
-        Button editBeneficiaryBtn = (Button)findViewById(R.id.editBeneficiaryBtn);
-        Button getBeneficiaryEditStatus = (Button)findViewById(R.id.getBeneficiaryStatusBtn);
+        // Initialize UI components
+        Button loginButton = findViewById(R.id.loginBtn);
+        Button resetPasswordButton = findViewById(R.id.resetPasswordBtn);
+        Button getBeneficiariesButton = findViewById(R.id.getBeneficiariesBtn);
 
-        UniqueID = DeviceManager.getInstance(MainActivity.this).getDeviceUniqueID();
-        Log.d(TAG,"Device unique ID is : "+UniqueID);
-        Log.d(TAG,"Is Device online : "+DeviceManager.getInstance(this).isOnline());
-
-        mDisposables = new CompositeDisposable();
-
+        // Setup server configuration
         mServerInfo = new ServerInfo();
         mServerInfo.setPort(8090);
         mServerInfo.setProtocol("http");
         mServerInfo.setHost_name("dev.karoothitbd.com");
 
+        // Setup headers
         mHeaders = new HashMap<>();
-        mHeaders.put("Authorization", "Bearer eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJzaG92b24iLCJpYXQiOjE3MDg4ODY5OTYsImV4cCI6MTg2NjU2Njk5Nn0.L-75R-EYM1GbrAqj-KdRpWLjxfxCMdVsAboepITEnI2I6AtTUtRhTgQaevzb5GOLWPnGaAUzggcC6SsArnMj-g");
+        mHeaders.put("Authorization", "Bearer eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJzYWtpYiIsImlhdCI6MTcxNDk4MTEwOCwiZXhwIjoxODcyNjYxMTA4fQ.7FgalnXhBOcC7q-nYfONbxmc7My4iUOeWpN2eK3b7vc_br43NCEFiKWIrXs1cJTsU_Ds_ZZLHRB28c-jdgiBRw");
         mHeaders.put("DeviceId", "29feb6211b04-a56d-7d6a-e79e-018b2f19");
 
-        UpdateBeneficiary updateBeneficiaryProcessor = new UpdateBeneficiary(MainActivity.this,mServerInfo,mHeaders,true);
+        // Set up button click listeners
+        loginButton.setOnClickListener(v -> testLogin());
+        resetPasswordButton.setOnClickListener(v -> testResetPassword());
+        getBeneficiariesButton.setOnClickListener(v -> testGetBeneficiaries());
+    }
 
-        editBeneficiaryBtn.setOnClickListener(updateBeneficiaryProcessor);
+    private void testLogin() {
+        showToast("Attempting login...");
+        executorService.execute(() -> {
+            LoginServiceImpl loginService = new LoginServiceImpl(this, this, mServerInfo);
+            String username = "shovon1";
+            String password = "HelloWorld";
+            loginService.doOnlineLogin(username, password, mHeaders);
+        });
+    }
 
-        UpdateBeneficiaryStatus updateBeneficiaryStatusProcessor = new UpdateBeneficiaryStatus(MainActivity.this,mServerInfo,mHeaders);
+    private void testResetPassword() {
+        showToast("Attempting password reset...");
+        executorService.execute(() -> {
+//            LoginServiceImpl loginService = new LoginServiceImpl(this, this, mServerInfo);
+//            String username = "shovon1";
+//            String newPassword = "NewPassword123";
+//            loginService.resetPassword(username, newPassword, mHeaders);
+        });
+    }
 
-        getBeneficiaryEditStatus.setOnClickListener(updateBeneficiaryStatusProcessor);
+    private void testGetBeneficiaries() {
+        showToast("Fetching beneficiaries...");
 
-        mapper = new ObjectMapper();
+        BeneficiaryDownloadService beneficiaryService = new BeneficiaryDownloadServiceImpl(mServerInfo);
 
+        BeneficiaryDownloadRequest request = BeneficiaryDownloadRequest.builder()
+                .bomaId(920101001)
+                .page(0)
+                .size(-1)
+                .build();
+
+        beneficiaryService.downloadBeneficiaryByBoma(request, mHeaders)
+                .subscribeOn(io.reactivex.rxjava3.schedulers.Schedulers.io()) // Run on IO thread
+                .observeOn(io.reactivex.rxjava3.android.schedulers.AndroidSchedulers.mainThread()) // Observe on UI thread
+                .subscribe(new io.reactivex.rxjava3.core.Observer<BeneficiaryDownloadResponse>() {
+                    @Override
+                    public void onSubscribe(io.reactivex.rxjava3.disposables.Disposable d) {
+                        // Optionally store the disposable if you want to dispose later
+                    }
+
+                    @Override
+                    public void onNext(BeneficiaryDownloadResponse response) {
+                        if (response.isOperationResult()) {
+                            showToast("Got " + response.getTotal() + " beneficiaries");
+                            Log.d(TAG, "Beneficiary data: " + response.getBeneficiaries());
+                        } else {
+                            showToast("Failed: " + response.getErrorMsg());
+                            Log.e(TAG, "API Error: " + response.getErrorMsg());
+                        }
+                    }
+
+                    @Override
+                    public void onError(Throwable e) {
+                        showToast("Error: " + e.getMessage());
+                        Log.e(TAG, "Error fetching beneficiaries", e);
+                    }
+
+                    @Override
+                    public void onComplete() {
+                        Log.d(TAG, "Beneficiary download complete");
+                    }
+                });
     }
 
 
+    @Override
     public void update(Observable o, Object arg) {
-
-    }
-
-
-
-
-
-    private Observable<PayrollReconcileBatchRequest> readPayrollReconcileJson(Context context) {
-
-        Observable<PayrollReconcileBatchRequest> nowObservable = new Observable<PayrollReconcileBatchRequest>() {
-            @Override
-            protected void subscribeActual(@NonNull Observer<? super PayrollReconcileBatchRequest> observer) {
-                PayrollReconcileBatchRequest payrollReconcileBatchRequest = null;
-
-                try {
-
-                    InputStream inputStream = context.getResources().openRawResource(R.raw.payroll_reconcile_request);
-                    ObjectMapper objectMapper = new ObjectMapper();
-                    payrollReconcileBatchRequest = objectMapper.readValue(inputStream, PayrollReconcileBatchRequest.class);
-
-                } catch (Throwable t) {
-                    observer.onError(t);
-                    observer.onComplete();
+        if (arg instanceof LoginResponse) {
+            LoginResponse response = (LoginResponse) arg;
+            runOnUiThread(() -> {
+                if (response.isOperationResult()) {
+                    showToast("Login successful!");
+                    authToken = response.getToken(); // Store the token for future requests
+                    Log.d(TAG, "Auth token: " + authToken);
+                } else {
+                    showToast("Login failed: " + response.getErrorMsg());
                 }
-
-                observer.onNext(payrollReconcileBatchRequest);
-                observer.onComplete();
-            }
-        };
-
-
-        return nowObservable;
+            });
+        } else if (arg instanceof ResetPassResponse) {
+            ResetPassResponse response = (ResetPassResponse) arg;
+            runOnUiThread(() -> {
+                if (response.isOperationResult()) {
+                    showToast("Password reset successful!");
+                    authToken = response.getToken(); // Update the token if needed
+                } else {
+                    showToast("Reset failed: " + response.getErrorMsg());
+                }
+            });
+        }
     }
 
+    private void showToast(String message) {
+        runOnUiThread(() -> Toast.makeText(MainActivity.this, message, Toast.LENGTH_LONG).show());
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        executorService.shutdownNow();
+    }
 }

@@ -46,7 +46,7 @@ public class LoginServiceImpl extends Observable implements LoginService{
     }
 
     @Override
-    public synchronized LoginResponse doOnlineLogin(LoginRequest loginRequest, HashMap<String, String> headers) {
+    public synchronized LoginResponse doOnlineLogin(String username, String password, HashMap<String, String> headers) {
 
         APIInterface apiInterface = null;
         boolean isError = false;
@@ -60,11 +60,12 @@ public class LoginServiceImpl extends Observable implements LoginService{
         try {
             if(isUiThread){
                 lResponse = prepareLoginResponse(8,"Please call this API from non UI thread.",false);
-            }else if(!isValidLoginRequest(loginRequest)){
+            }else if(!isValidLoginRequest(username, password)){
                 lResponse = prepareLoginResponse(8, "Invalid login request", false);
             }else {
                 apiInterface = APIClient.getInstance().setServerInfo(mServerInfo).getRetrofit().create(APIInterface.class);
-                Call<LoginResponse> call = apiInterface.login(loginRequest, headers);
+                LoginRequest request = LoginRequest.builder().userName(username).password(password).build();
+                Call<LoginResponse> call = apiInterface.login(request, headers);
                 response = call.execute();
                 if (response.code() == 200) {
                     lResponse = response.body();
@@ -164,11 +165,10 @@ public class LoginServiceImpl extends Observable implements LoginService{
         return resetPassResponse;
     }
 
-    private boolean isValidLoginRequest(LoginRequest loginRequest){
-        if(loginRequest==null) return false;
-        if(loginRequest.getUserName()==null || loginRequest.getUserName().isEmpty()) return false;
-        if(loginRequest.getPassword()==null || loginRequest.getPassword().isEmpty()) return false;
-        if(loginRequest.getDeviceId()==null || loginRequest.getDeviceId().isEmpty()) return false;
+    private boolean isValidLoginRequest(String username, String password){
+        if(username == null || password == null) return false;
+        if(username==null || username.isEmpty()) return false;
+        if(password==null || password.isEmpty()) return false;
         return true;
     }
 
