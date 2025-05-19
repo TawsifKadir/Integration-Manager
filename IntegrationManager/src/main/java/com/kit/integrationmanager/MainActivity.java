@@ -13,6 +13,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.kit.integrationmanager.model.ServerInfo;
 import com.kit.integrationmanager.payload.download.request.BeneficiaryDownloadRequest;
 import com.kit.integrationmanager.payload.download.response.BeneficiaryDownloadResponse;
+import com.kit.integrationmanager.payload.login.callback.LoginCallBack;
 import com.kit.integrationmanager.payload.login.response.LoginResponse;
 import com.kit.integrationmanager.payload.reset.response.ResetPassResponse;
 import com.kit.integrationmanager.service.BeneficiaryDownloadService;
@@ -25,7 +26,7 @@ import java.util.Observer;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-public class MainActivity extends AppCompatActivity implements Observer {
+public class MainActivity extends AppCompatActivity {
 
     private static final String TAG = "MainActivity";
     private final ExecutorService executorService = Executors.newFixedThreadPool(2);
@@ -64,10 +65,20 @@ public class MainActivity extends AppCompatActivity implements Observer {
     private void testLogin() {
         showToast("Attempting login...");
         executorService.execute(() -> {
-            LoginServiceImpl loginService = new LoginServiceImpl(this, this, mServerInfo);
-            String username = "shovon1";
-            String password = "HelloWorld";
-            loginService.doOnlineLogin(username, password, mHeaders);
+            LoginServiceImpl loginService = new LoginServiceImpl(this, mServerInfo);
+            String username = "admin";
+            String password = "Abc@123";
+            loginService.doOnlineLogin(username, password, mHeaders, new LoginCallBack() {
+                @Override
+                public void onSuccess(LoginResponse response) {
+                    Log.d(TAG, "onSuccess() called with: response = [" + response + "]");
+                }
+
+                @Override
+                public void onError(int errorCode, String errorMessage) {
+
+                }
+            });
         });
     }
 
@@ -125,32 +136,6 @@ public class MainActivity extends AppCompatActivity implements Observer {
                 });
     }
 
-
-    @Override
-    public void update(Observable o, Object arg) {
-        if (arg instanceof LoginResponse) {
-            LoginResponse response = (LoginResponse) arg;
-            runOnUiThread(() -> {
-                if (response.isOperationResult()) {
-                    showToast("Login successful!");
-                    authToken = response.getToken(); // Store the token for future requests
-                    Log.d(TAG, "Auth token: " + authToken);
-                } else {
-                    showToast("Login failed: " + response.getErrorMsg());
-                }
-            });
-        } else if (arg instanceof ResetPassResponse) {
-            ResetPassResponse response = (ResetPassResponse) arg;
-            runOnUiThread(() -> {
-                if (response.isOperationResult()) {
-                    showToast("Password reset successful!");
-                    authToken = response.getToken(); // Update the token if needed
-                } else {
-                    showToast("Reset failed: " + response.getErrorMsg());
-                }
-            });
-        }
-    }
 
     private void showToast(String message) {
         runOnUiThread(() -> Toast.makeText(MainActivity.this, message, Toast.LENGTH_LONG).show());

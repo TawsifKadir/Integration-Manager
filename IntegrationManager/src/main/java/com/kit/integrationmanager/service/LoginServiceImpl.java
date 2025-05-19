@@ -12,6 +12,7 @@ import com.kit.integrationmanager.model.Login;
 import com.kit.integrationmanager.model.ServerInfo;
 import com.kit.integrationmanager.payload.RegistrationStatus;
 import com.kit.integrationmanager.payload.ResponseHeader;
+import com.kit.integrationmanager.payload.login.callback.LoginCallBack;
 import com.kit.integrationmanager.payload.login.request.LoginRequest;
 import com.kit.integrationmanager.payload.login.response.LoginResponse;
 import com.kit.integrationmanager.payload.reset.request.ResetPassRequest;
@@ -38,6 +39,13 @@ public class LoginServiceImpl extends Observable implements LoginService{
         this.mObserver = null;
         this.mServerInfo = null;
     }
+
+    public LoginServiceImpl(Context context,ServerInfo serverInfo) {
+        this.mContext = mContext;
+        this.mObserver = null;
+        this.mServerInfo = serverInfo;
+    }
+
     public LoginServiceImpl(Context context,Observer observer,ServerInfo serverInfo) {
         this.mContext = mContext;
         this.mObserver = observer;
@@ -46,46 +54,56 @@ public class LoginServiceImpl extends Observable implements LoginService{
     }
 
     @Override
-    public synchronized LoginResponse doOnlineLogin(String username, String password, HashMap<String, String> headers) {
-
-        APIInterface apiInterface = null;
-        boolean isError = false;
-        Throwable errorObject = null;
-        Response<LoginResponse> response = null;
-        LoginResponse lResponse = null;
-        boolean isUiThread = Build.VERSION.SDK_INT >= Build.VERSION_CODES.M
-                ? Looper.getMainLooper().isCurrentThread()
-                : Thread.currentThread() == Looper.getMainLooper().getThread();
-
-        try {
-            if(isUiThread){
-                lResponse = prepareLoginResponse(8,"Please call this API from non UI thread.",false);
-            }else if(!isValidLoginRequest(username, password)){
-                lResponse = prepareLoginResponse(8, "Invalid login request", false);
-            }else {
-                apiInterface = APIClient.getInstance().setServerInfo(mServerInfo).getRetrofit().create(APIInterface.class);
-                LoginRequest request = LoginRequest.builder().userName(username).password(password).build();
-                Call<LoginResponse> call = apiInterface.login(request, headers);
-                response = call.execute();
-                if (response.code() == 200) {
-                    lResponse = response.body();
-                } else {
-                    lResponse = prepareLoginResponse(response.code(), response.errorBody().string(), false);
-                }
-            }
-        }catch(Throwable t){
-            isError=true;
-            errorObject=t;
-            lResponse = prepareLoginResponse(8,errorObject.getMessage(),false);
-        }finally {
-            if(isError){
-                Log.e(TAG,"Error occured in login call : "+errorObject.getMessage());
-                errorObject.printStackTrace();
-            }
-            errorObject=null;
-            response = null;
+    public void doOnlineLogin(String username, String password, HashMap<String, String> headers,
+                              LoginCallBack callback) {
+        if (!isValidLoginRequest(username, password)) {
+            callback.onError(400, "Invalid login request");
+            return;
         }
-        return lResponse;
+        try{
+            APIInterface apiInterface = APIClient.getInstance()
+                    .setServerInfo(mServerInfo)
+                    .getRetrofit()
+                    .create(APIInterface.class);
+
+            LoginRequest request = LoginRequest.builder()
+                    .userName(username)
+                    .password(password)
+                    .build();
+
+            apiInterface.login(request, headers).enqueue(new Callback<LoginResponse>() {
+                @Override
+                public void onResponse(Call<LoginResponse> call, Response<LoginResponse> response) {
+                    if (response.isSuccessful()) {
+                        LoginResponse loginResponse = response.body();
+                        if (loginResponse != null && loginResponse.getErrorCode() == 0) {
+                            callback.onSuccess(loginResponse);
+                        } else {
+                            String errorMsg = loginResponse != null ?
+                                    loginResponse.getErrorMsg() : "Empty response body";
+                            int errorCode = loginResponse != null ?
+                                    loginResponse.getErrorCode() : -1;
+                            callback.onError(errorCode, errorMsg);
+                        }
+                    } else {
+                        try {
+                            callback.onError(response.code(),
+                                    response.errorBody() != null ?
+                                            response.errorBody().string() : "Login failed");
+                        } catch (Exception e) {
+                            callback.onError(-1, "Error parsing response");
+                        }
+                    }
+                }
+
+                @Override
+                public void onFailure(Call<LoginResponse> call, Throwable t) {
+                    callback.onError(-1, t.getMessage());
+                }
+            });
+        }catch (Exception e){
+            callback.onError(-1, e.getMessage());
+        }
     }
 
     @Override
