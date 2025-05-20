@@ -1,12 +1,31 @@
-package com.kit.integrationmanager.model;
+package com.kit.integrationmanager.payload.update.request;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.kit.integrationmanager.model.Address;
+import com.kit.integrationmanager.model.AlternatePayee;
+import com.kit.integrationmanager.model.Biometric;
+import com.kit.integrationmanager.model.CurrencyEnum;
+import com.kit.integrationmanager.model.DocumentTypeEnum;
+import com.kit.integrationmanager.model.GenderEnum;
+import com.kit.integrationmanager.model.HouseholdMember;
+import com.kit.integrationmanager.model.IncomeSourceEnum;
+import com.kit.integrationmanager.model.LegalStatusEnum;
+import com.kit.integrationmanager.model.Location;
+import com.kit.integrationmanager.model.MaritalStatusEnum;
+import com.kit.integrationmanager.model.Nominee;
+import com.kit.integrationmanager.model.NonPerticipationReasonEnum;
+import com.kit.integrationmanager.model.RelationshipEnum;
+import com.kit.integrationmanager.model.SelectionCriteriaEnum;
+import com.kit.integrationmanager.model.SelectionReasonEnum;
+
 import lombok.Data;
 
 import java.util.List;
 
 @Data
-public class Beneficiary {
+@JsonIgnoreProperties(ignoreUnknown = true)
+public class BeneficiaryUpdateRequestV2 {
 
     @JsonProperty("applicationId")
     private String applicationId;
@@ -136,15 +155,8 @@ public class Beneficiary {
 
     @JsonProperty("alternatePayee2")
     private AlternatePayee alternatePayee2;
-    @JsonProperty("created")
-    private String created;
-    @JsonProperty("createdBy")
-    private Long createdBy;
     @JsonProperty("updatedBy")
     private Long updatedBy;
-    @JsonProperty("updated")
-    private String updated;
-
     public String getSpouseFirstName() {
         return spouseFirstName;
     }
@@ -488,12 +500,5 @@ public class Beneficiary {
     public void setAlternatePayee2(AlternatePayee alternatePayee2) {
         this.alternatePayee2 = alternatePayee2;
     }
-
-    public Long getCreatedBy() {
-        return createdBy;
-    }
-
-    public void setCreatedBy(Long createdBy) {
-        this.createdBy = createdBy;
-    }
 }
+

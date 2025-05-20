@@ -9,6 +9,9 @@ import java.util.List;
 @Data
 public class Nominee {
 
+    @JsonProperty("id")
+    @SerializedName("id")
+    private int id;
     @JsonProperty("applicationId")
     @SerializedName("applicationId")
     private String applicationId;
@@ -60,6 +63,9 @@ public class Nominee {
     @JsonProperty("biometrics")
     @SerializedName("biometrics")
     private List<Biometric> biometrics;
+    @JsonProperty("nomineePopupResponse")
+    @SerializedName("nomineePopupResponse")
+    private String nomineePopupResponse;
 
 
     public String getApplicationId() {
@@ -136,6 +142,22 @@ public class Nominee {
 
     public RelationshipEnum getRelationshipWithHouseholdHead() {
         return relationshipWithHouseholdHead;
+    }
+
+    public int getId() {
+        return id;
+    }
+
+    public void setId(int id) {
+        this.id = id;
+    }
+
+    public String getNomineePopupResponse() {
+        return nomineePopupResponse;
+    }
+
+    public void setNomineePopupResponse(String nomineePopupResponse) {
+        this.nomineePopupResponse = nomineePopupResponse;
     }
 
     public void setRelationshipWithHouseholdHead(RelationshipEnum relationshipWithHouseholdHead) {

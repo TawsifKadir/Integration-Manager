@@ -1,7 +1,7 @@
 package com.kit.integrationmanager.payload.reconcile.response;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.kit.integrationmanager.model.BulkOperation;
+import com.kit.integrationmanager.model.BulkResponse;
 
 import java.util.List;
 
@@ -16,5 +16,5 @@ import lombok.Setter;
 @NoArgsConstructor
 public class PayrollReconcileBatchResponse {
     @JsonProperty("bulkResponse")
-    private List<BulkOperation> bulkResponse;
+    private List<BulkResponse> bulkResponse;
 }

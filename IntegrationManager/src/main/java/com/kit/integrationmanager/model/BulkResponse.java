@@ -11,11 +11,13 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class BulkOperation {
+public class BulkResponse {
     @JsonProperty("applicationId")
     private String applicationId;
     @JsonProperty("result")
     private BulkOperationResult result;
     @JsonProperty("errorMessage")
     private String errorMessage;
+    @JsonProperty("requestId")
+    private String requestId;
 }

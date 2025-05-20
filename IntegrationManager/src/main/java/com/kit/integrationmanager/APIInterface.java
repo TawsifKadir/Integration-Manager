@@ -25,7 +25,9 @@ import com.kit.integrationmanager.payload.reconcile.response.PayrollReconcileBat
 import com.kit.integrationmanager.payload.reconcile.response.PayrollReconcileResponse;
 import com.kit.integrationmanager.payload.reset.request.ResetPassRequest;
 import com.kit.integrationmanager.payload.reset.response.ResetPassResponse;
+import com.kit.integrationmanager.payload.update.request.UpdateFullBeneficiaryRequest;
 import com.kit.integrationmanager.payload.update.response.CheckUpdateResponse;
+import com.kit.integrationmanager.payload.update.response.UpdateFullBeneficiaryResponse;
 
 import java.util.HashMap;
 import java.util.List;
@@ -84,12 +86,13 @@ public interface APIInterface {
     @POST("/afis/api/payroll/lockPayroll")
     Call<PayrollLockResponse> lockPayroll(@Body PayrollLockRequest payrollLockRequest, @HeaderMap Map<String, String> headers);
 
-
     @Headers({"READ_TIMEOUT:300","WRITE_TIMEOUT:300"})
     @POST("/afis/api/payroll/reconciliation/save")
     Call<PayrollReconcileResponse> reconcilePayroll(@Body PayrollReconcileRequest payrollReconRequest, @HeaderMap Map<String, String> headers);
     @Headers({"READ_TIMEOUT:300","WRITE_TIMEOUT:300"})
     @POST("/afis/api/payroll/reconciliation/save/batch")
     Call<PayrollReconcileBatchResponse> reconcilePayrollBatch(@Body PayrollReconcileBatchRequest payrollReconBatchRequest, @HeaderMap Map<String, String> headers);
-
+    @Headers({"READ_TIMEOUT:300", "WRITE_TIMEOUT:300"})
+    @POST("/afis/api/beneficiary/update-full-beneficiary")
+    Call<UpdateFullBeneficiaryResponse> updateFullBeneficiary(@Body UpdateFullBeneficiaryRequest updateFullBeneficiaryRequest, @HeaderMap Map<String, String> headers);
 }

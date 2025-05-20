@@ -1,6 +1,8 @@
 package com.kit.integrationmanager;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
+import android.content.res.Resources;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -10,21 +12,32 @@ import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.kit.integrationmanager.model.Beneficiary;
+import com.kit.integrationmanager.model.BulkResponse;
 import com.kit.integrationmanager.model.ServerInfo;
 import com.kit.integrationmanager.payload.download.request.BeneficiaryDownloadRequest;
 import com.kit.integrationmanager.payload.download.response.BeneficiaryDownloadResponse;
 import com.kit.integrationmanager.payload.login.callback.LoginCallBack;
 import com.kit.integrationmanager.payload.login.response.LoginResponse;
-import com.kit.integrationmanager.payload.reset.response.ResetPassResponse;
+import com.kit.integrationmanager.payload.update.request.BeneficiaryUpdateRequestV2;
+import com.kit.integrationmanager.payload.update.request.UpdateFullBeneficiaryRequest;
 import com.kit.integrationmanager.service.BeneficiaryDownloadService;
 import com.kit.integrationmanager.service.BeneficiaryDownloadServiceImpl;
+import com.kit.integrationmanager.service.BeneficiaryUpdateService;
+import com.kit.integrationmanager.service.BeneficiaryUpdateServiceImpl;
 import com.kit.integrationmanager.service.LoginServiceImpl;
 
+import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Observable;
-import java.util.Observer;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+
+import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
+import io.reactivex.rxjava3.schedulers.Schedulers;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -59,7 +72,7 @@ public class MainActivity extends AppCompatActivity {
         // Set up button click listeners
         loginButton.setOnClickListener(v -> testLogin());
         resetPasswordButton.setOnClickListener(v -> testResetPassword());
-        getBeneficiariesButton.setOnClickListener(v -> testGetBeneficiaries());
+        getBeneficiariesButton.setOnClickListener(v -> testUpdateBeneficiary());
     }
 
     private void testLogin() {
@@ -136,6 +149,71 @@ public class MainActivity extends AppCompatActivity {
                 });
     }
 
+
+    @SuppressLint("CheckResult")
+    private void testUpdateBeneficiary(){
+
+        UpdateFullBeneficiaryRequest request = readBeneficiariesFromRaw(MainActivity.this);
+
+        BeneficiaryUpdateService updateService = new BeneficiaryUpdateServiceImpl(mServerInfo);
+        updateService.updateFullBeneficiary(request, mHeaders)
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(
+                        response -> {
+                            // Handle successful response
+                            int successCount = response.getSuccessCount();
+                            List<BulkResponse> bulkResponse = response.getBulkResponse();
+                            // Process the response
+                        },
+                        throwable -> {
+                            // Handle error
+                            throwable.printStackTrace();
+                        }
+                );
+    }
+
+    public static UpdateFullBeneficiaryRequest readBeneficiariesFromRaw(Context context) {
+        try {
+            Resources res = context.getResources();
+            InputStream inputStream = res.openRawResource(R.raw.beneficiaries);
+
+            ObjectMapper objectMapper = new ObjectMapper();
+            JsonNode rootNode = objectMapper.readTree(inputStream);
+
+            JsonNode beneficiariesNode = rootNode.get("beneficiaries");
+            List<BeneficiaryUpdateRequestV2> beneficiaryList = new ArrayList<>();
+
+            if (beneficiariesNode != null && beneficiariesNode.isArray()) {
+                for (JsonNode node : beneficiariesNode) {
+                    Beneficiary beneficiary = objectMapper.treeToValue(node, Beneficiary.class);
+                    BeneficiaryUpdateRequestV2 editRequest = objectMapper.convertValue(beneficiary, BeneficiaryUpdateRequestV2.class);
+                    beneficiaryList.add(editRequest);
+                }
+            }
+
+            return UpdateFullBeneficiaryRequest.builder()
+                    .beneficiaries(beneficiaryList)
+                    .build();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+//    public static void observeUpdateProgress(){
+//        // To observe progress
+//        updateService.observeUpdateProgress()
+//                .subscribe(progressEvent -> {
+//                    // Update UI with progress
+//                });
+//    }
+//
+//    public static void cancelUpdate(){
+//        // To cancel the update if needed
+//        updateService.cancelUpdate();
+//    }
 
     private void showToast(String message) {
         runOnUiThread(() -> Toast.makeText(MainActivity.this, message, Toast.LENGTH_LONG).show());
