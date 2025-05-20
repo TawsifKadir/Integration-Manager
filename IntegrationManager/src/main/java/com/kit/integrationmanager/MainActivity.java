@@ -202,19 +202,6 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-//    public static void observeUpdateProgress(){
-//        // To observe progress
-//        updateService.observeUpdateProgress()
-//                .subscribe(progressEvent -> {
-//                    // Update UI with progress
-//                });
-//    }
-//
-//    public static void cancelUpdate(){
-//        // To cancel the update if needed
-//        updateService.cancelUpdate();
-//    }
-
     private void showToast(String message) {
         runOnUiThread(() -> Toast.makeText(MainActivity.this, message, Toast.LENGTH_LONG).show());
     }

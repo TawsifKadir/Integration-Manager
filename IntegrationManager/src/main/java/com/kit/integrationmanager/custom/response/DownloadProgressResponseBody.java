@@ -1,9 +1,5 @@
 package com.kit.integrationmanager.custom.response;
 
-
-
-
-
 import com.kit.integrationmanager.listener.DownloadProgressListener;
 
 import java.io.IOException;
