@@ -1,325 +1,145 @@
 package com.kit.integrationmanager.service;
 
-
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.util.Log;
 
 import com.kit.integrationmanager.APIClient;
 import com.kit.integrationmanager.APIInterface;
-
-import com.kit.integrationmanager.model.Device;
-import com.kit.integrationmanager.model.ServerInfo;
 import com.kit.integrationmanager.model.Beneficiary;
-import com.kit.integrationmanager.payload.BatchRegistrationResponseV2;
-import com.kit.integrationmanager.payload.BatchRegistrationResult;
-import com.kit.integrationmanager.payload.RegistrationResult;
-import com.kit.integrationmanager.payload.RegistrationStatus;
+import com.kit.integrationmanager.model.ServerInfo;
 import com.kit.integrationmanager.payload.BatchRegistrationRequest;
 import com.kit.integrationmanager.payload.BatchRegistrationResponse;
 
-import lombok.Getter;
-import lombok.Setter;
-import retrofit2.Call;
-import retrofit2.Callback;
-import retrofit2.Response;
-
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Observable;
-import java.util.Observer;
+import java.util.Map;
 
-public class OnlineIntegrationManager extends Observable implements IntegrationManager{
+import io.reactivex.rxjava3.core.Observable;
+import io.reactivex.rxjava3.core.Single;
+import io.reactivex.rxjava3.schedulers.Schedulers;
+import retrofit2.Call;
+import retrofit2.Response;
 
-    private final Observer mObserver;
+public class OnlineIntegrationManager implements IntegrationManager {
+
+    private final Context context;
+    private final ServerInfo serverInfo;
     private APIInterface apiInterface;
+    private static final String TAG = "OnlineIntegrationManager";
 
-    @Getter
-    @Setter
-    private ServerInfo mServerInfo;
-
-    private Context mContext;
-
-    private Device mDeviceInfo;
-
-    private String TAG = "OnlineIntegrationManager";
-    public OnlineIntegrationManager(Context context,Observer observer,ServerInfo serverInfo){
-        mContext = context;
-        mServerInfo = serverInfo;
-        mDeviceInfo = null;
-        mObserver = observer;
-    }
-
-    public synchronized void syncRecords(List<Beneficiary> beneficiaries,HashMap<String,String > headers) throws Exception{
-        BatchRegistrationRequest apiRequest = BatchRegistrationRequest.builder().beneficiaries(beneficiaries).build();
-        apiInterface = null;
+    @SuppressLint("LongLogTag")
+    public OnlineIntegrationManager(Context context, ServerInfo serverInfo) {
+        this.context = context.getApplicationContext();
+        this.serverInfo = serverInfo;
         try {
-            if(!DeviceManager.getInstance(mContext).isOnline()){
-                Log.d(TAG,"Error: The device is not connetced.");
-                mObserver.update(OnlineIntegrationManager.this,prepareRegistrationResult(
-                        RegistrationStatus.FAILED,
-                        1,
-                        "The device is not connetced.",
-                        null
-                ));
-                return;
-            }
-
-            if(beneficiaries==null || beneficiaries.isEmpty()){
-                Log.d(TAG,"Error: empty beneficiary list provided.");
-                mObserver.update(OnlineIntegrationManager.this,prepareRegistrationResult(
-                        RegistrationStatus.FAILED,
-                        10,
-                        "Empty beneficiary list provided.",
-                        null
-                ));
-            }
-
-            apiInterface = APIClient.getInstance().setServerInfo(mServerInfo).getRetrofit().create(APIInterface.class);
-        }catch(Exception exc){
-            exc.printStackTrace();
-            mObserver.update(OnlineIntegrationManager.this,prepareRegistrationResult(
-                    RegistrationStatus.FAILED,
-                    1,
-                    "Error while creating API Interface. Possibly , Server information is not correct.",
-                    null
-            ));
-            return;
+            this.apiInterface = APIClient.getInstance()
+                    .setServerInfo(serverInfo)
+                    .getRetrofit()
+                    .create(APIInterface.class);
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to create API interface", e);
         }
-
-        Call<BatchRegistrationResponse> call = apiInterface.registerBatch(apiRequest, headers);
-        call.enqueue(new Callback<BatchRegistrationResponse>() {
-
-            @Override
-            public void onResponse(Call<BatchRegistrationResponse> call, Response<BatchRegistrationResponse> response) {
-                if(response.code()==200) {
-                    try {
-                        mObserver.update(OnlineIntegrationManager.this, prepareRegistrationResult(
-                                RegistrationStatus.SUCCESS,
-                                0,
-                                "",
-                                response.body().getApplicationIds()
-                        ));
-                    } catch (Throwable exc) {
-                        Log.e(TAG, "Response Error : " + exc.getLocalizedMessage());
-                        exc.printStackTrace();
-                        mObserver.update(OnlineIntegrationManager.this,prepareRegistrationResult(
-                                RegistrationStatus.FAILED,
-                                1,
-                                exc.getLocalizedMessage(),
-                                null
-                        ));
-                    }
-                }else{
-                    String msg = "Error Occurred";
-                    try{msg=response.errorBody().string();}catch(Exception exc){}
-                    mObserver.update(OnlineIntegrationManager.this,prepareRegistrationResult(
-                            RegistrationStatus.FAILED,
-                            response.code(),
-                            msg,
-                            null
-                    ));
-                }
-            }
-
-            @Override
-            public void onFailure(Call<BatchRegistrationResponse> call, Throwable throwable) {
-                RegistrationResult syncResult = new RegistrationResult(RegistrationStatus.FAILED,null);
-                mObserver.update(OnlineIntegrationManager.this,prepareRegistrationResult(
-                        RegistrationStatus.FAILED,
-                        1,
-                        throwable.getMessage(),
-                        null
-                ));
-            }
-        });
     }
 
-    public synchronized void syncRecordsV2(List<Beneficiary> beneficiaries,HashMap<String,String > headers) throws Exception{
-        BatchRegistrationRequest apiRequest = BatchRegistrationRequest.builder().beneficiaries(beneficiaries).build();
-        apiInterface = null;
-        try {
-            if(!DeviceManager.getInstance(mContext).isOnline()){
-                Log.d(TAG,"Error: The device is not connetced.");
-                mObserver.update(OnlineIntegrationManager.this,prepareBatchRegistrationResult(
-                        RegistrationStatus.FAILED,
-                        1,
-                        "The device is not connetced.",
-                        null
-                ));
-                return;
-            }
-
-            if(beneficiaries==null || beneficiaries.isEmpty()){
-                Log.d(TAG,"Error: empty beneficiary list provided.");
-                mObserver.update(OnlineIntegrationManager.this,prepareBatchRegistrationResult(
-                        RegistrationStatus.FAILED,
-                        10,
-                        "Empty beneficiary list provided.",
-                        null
-                ));
-            }
-
-            apiInterface = APIClient.getInstance().setServerInfo(mServerInfo).getRetrofit().create(APIInterface.class);
-        }catch(Exception exc){
-            exc.printStackTrace();
-            mObserver.update(OnlineIntegrationManager.this,prepareBatchRegistrationResult(
-                    RegistrationStatus.FAILED,
-                    1,
-                    "Error while creating API Interface. Possibly , Server information is not correct.",
-                    null
-            ));
-            return;
-        }
-
-        Call<List<BatchRegistrationResponseV2>> call = apiInterface.registerBatchV2(apiRequest, headers);
-        call.enqueue(new Callback<List<BatchRegistrationResponseV2>>() {
-
-            @Override
-            public void onResponse(Call<List<BatchRegistrationResponseV2>> call, Response<List<BatchRegistrationResponseV2>> response) {
-                if(response.code()==200) {
-                    try {
-                        mObserver.update(OnlineIntegrationManager.this, prepareBatchRegistrationResult(
-                                RegistrationStatus.SUCCESS,
-                                0,
-                                "",
-                                response.body()
-                        ));
-                    } catch (Throwable exc) {
-                        Log.e(TAG, "Response Error : " + exc.getLocalizedMessage());
-                        exc.printStackTrace();
-                        mObserver.update(OnlineIntegrationManager.this,prepareBatchRegistrationResult(
-                                RegistrationStatus.FAILED,
-                                1,
-                                exc.getLocalizedMessage(),
-                                null
-                        ));
-                    }
-                }else{
-                    String msg = "Error Occurred";
-                    try{msg=response.errorBody().string();}catch(Exception exc){}
-                    mObserver.update(OnlineIntegrationManager.this,prepareBatchRegistrationResult(
-                            RegistrationStatus.FAILED,
-                            response.code(),
-                            msg,
-                            null
-                    ));
-                }
-            }
-
-            @Override
-            public void onFailure(Call<List<BatchRegistrationResponseV2>> call, Throwable throwable) {
-                RegistrationResult syncResult = new RegistrationResult(RegistrationStatus.FAILED,null);
-                mObserver.update(OnlineIntegrationManager.this,prepareBatchRegistrationResult(
-                        RegistrationStatus.FAILED,
-                        1,
-                        throwable.getMessage(),
-                        null
-                ));
-            }
-        });
-    }
-
-
-    public synchronized void syncRecord(Beneficiary beneficiary, HashMap<String,String> headers) throws Exception{
-
-        Beneficiary mBeneficiary = beneficiary;
-        apiInterface = null;
-        try {
-            if(!DeviceManager.getInstance(mContext).isOnline()){
-                Log.d(TAG,"Error: The device is not connetced.");
-                mObserver.update(OnlineIntegrationManager.this,prepareRegistrationResult(
-                        RegistrationStatus.FAILED,
-                        1,
-                        "The device is not connetced.",
-                        null
-                ));
-                return;
-            }
-            if(beneficiary==null){
-                Log.d(TAG,"Error: The device is not connetced.");
-                mObserver.update(OnlineIntegrationManager.this,prepareRegistrationResult(
-                        RegistrationStatus.FAILED,
-                        11,
-                        "Beneficiary record null.",
-                        null
-                ));
-            }
-            apiInterface = APIClient.getInstance().setServerInfo(mServerInfo).getRetrofit().create(APIInterface.class);
-        }catch(Exception exc){
-            Log.e(TAG,"Error while creating API Interface. Possibly , Server information is not correct.");
-            exc.printStackTrace();
-            mObserver.update(OnlineIntegrationManager.this,prepareRegistrationResult(
-                    RegistrationStatus.FAILED,
-                    1,
-                    "Error while creating API Interface. Possibly , Server information is not correct.",
-                    null
-                ));
-            return;
-        }
-        Call<Void> call = apiInterface.register(mBeneficiary,headers);
-        call.enqueue(new Callback<Void>() {
-            @Override
-            public void onResponse(Call<Void> call, Response<Void> response) {
-                if(response.code()==200){
-                    try{
-                        List bID = new ArrayList<String>();
-                        bID.add(mBeneficiary.getApplicationId());
-                        mObserver.update(OnlineIntegrationManager.this,prepareRegistrationResult(
-                                RegistrationStatus.SUCCESS,
-                                0,
-                                "",
-                                bID
-                        ));
-                    }catch(Exception exc){
-                        Log.e(TAG,"Response Error : "+ exc.getLocalizedMessage());
-                        exc.printStackTrace();
-                        mObserver.update(OnlineIntegrationManager.this,prepareRegistrationResult(
-                                RegistrationStatus.FAILED,
-                                1,
-                                exc.getLocalizedMessage(),
-                                null
-                        ));
-                    }
-                }else{
-                    String msg = "Error Occurred";
-                    try{msg=response.errorBody().string();}catch(Exception exc){}
-                    mObserver.update(OnlineIntegrationManager.this,prepareRegistrationResult(
-                            RegistrationStatus.FAILED,
-                            response.code(),
-                            msg,
-                            null
-                    ));
-                }
-            }
-
-            @Override
-            public void onFailure(Call<Void> call, Throwable throwable) {
-
-                mObserver.update(OnlineIntegrationManager.this,prepareRegistrationResult(
-                        RegistrationStatus.FAILED,
-                        1,
-                        throwable.getMessage(),
-                        null
-                ));
-            }
-        });
-    }
-    RegistrationResult prepareRegistrationResult(RegistrationStatus registrationStatus,int errorCode, String errorMsg,List<String> result){
-        registrationStatus.setErrorCode(errorCode);
-        registrationStatus.setErrorMsg(errorMsg);
-        RegistrationResult syncResult = new RegistrationResult(registrationStatus,result);
-        return syncResult;
-    }
-    BatchRegistrationResult prepareBatchRegistrationResult(RegistrationStatus registrationStatus,int errorCode, String errorMsg,List<BatchRegistrationResponseV2> result){
-        registrationStatus.setErrorCode(errorCode);
-        registrationStatus.setErrorMsg(errorMsg);
-        BatchRegistrationResult syncResult = new BatchRegistrationResult(registrationStatus,result);
-        return syncResult;
-    }
+    @SuppressLint({"CheckResult", "LongLogTag"})
     @Override
-    protected void finalize() throws Throwable {
+    public void syncRecords(List<Beneficiary> beneficiaries, HashMap<String, String> headers) throws Exception {
+        if (apiInterface == null) {
+            throw new IllegalStateException("API Interface not initialized");
+        }
 
-        super.finalize();
+        Observable.fromCallable(() -> {
+                    if (!DeviceManager.getInstance(context).isOnline()) {
+                        throw new NetworkException("The device is not connected");
+                    }
+                    if (beneficiaries == null || beneficiaries.isEmpty()) {
+                        throw new IllegalArgumentException("Empty beneficiary list provided");
+                    }
+                    return BatchRegistrationRequest.builder()
+                            .beneficiaries(beneficiaries)
+                            .build();
+                })
+                .flatMap(request -> convertCallToObservable(apiInterface.registerBatch(request, headers)))
+                .subscribeOn(Schedulers.io())
+                .subscribe(
+                        response -> {
+                            if (response.isSuccessful()) {
+                                Log.d(TAG, "Batch sync successful");
+                            } else {
+                                Log.e(TAG, "Batch sync failed: " + response.code());
+                            }
+                        },
+                        throwable -> Log.e(TAG, "Batch sync failed", throwable)
+                );
+    }
+
+    @SuppressLint({"CheckResult", "LongLogTag"})
+    @Override
+    public void syncRecord(Beneficiary beneficiary, HashMap<String, String> headers) throws Exception {
+        if (apiInterface == null) {
+            throw new IllegalStateException("API Interface not initialized");
+        }
+
+        Single.fromCallable(() -> {
+                    if (!DeviceManager.getInstance(context).isOnline()) {
+                        throw new NetworkException("The device is not connected");
+                    }
+                    if (beneficiary == null) {
+                        throw new IllegalArgumentException("Beneficiary record is null");
+                    }
+                    return beneficiary;
+                })
+                .flatMap(benef -> convertCallToSingle(apiInterface.register(benef, headers)))
+                .subscribeOn(Schedulers.io())
+                .subscribe(
+                        response -> {
+                            if (response.isSuccessful()) {
+                                Log.d(TAG, "Single sync successful");
+                            } else {
+                                Log.e(TAG, "Single sync failed: " + response.code());
+                            }
+                        },
+                        throwable -> Log.e(TAG, "Single sync failed", throwable)
+                );
+    }
+
+    // Helper method to convert Call to Observable
+    private Observable<Response<BatchRegistrationResponse>> convertCallToObservable(Call<BatchRegistrationResponse> call) {
+        return Observable.create(emitter -> {
+            try {
+                Response<BatchRegistrationResponse> response = call.execute();
+                if (!emitter.isDisposed()) {
+                    emitter.onNext(response);
+                    emitter.onComplete();
+                }
+            } catch (Exception e) {
+                if (!emitter.isDisposed()) {
+                    emitter.onError(e);
+                }
+            }
+        });
+    }
+
+    // Helper method to convert Call to Single
+    private Single<Response<Void>> convertCallToSingle(Call<Void> call) {
+        return Single.create(emitter -> {
+            try {
+                Response<Void> response = call.execute();
+                if (!emitter.isDisposed()) {
+                    emitter.onSuccess(response);
+                }
+            } catch (Exception e) {
+                if (!emitter.isDisposed()) {
+                    emitter.onError(e);
+                }
+            }
+        });
+    }
+
+    private static class NetworkException extends Exception {
+        public NetworkException(String message) {
+            super(message);
+        }
     }
 }

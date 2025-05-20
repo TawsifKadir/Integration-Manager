@@ -7,11 +7,7 @@ import android.util.Log;
 
 import com.kit.integrationmanager.APIClient;
 import com.kit.integrationmanager.APIInterface;
-import com.kit.integrationmanager.BuildConfig;
-import com.kit.integrationmanager.model.Login;
 import com.kit.integrationmanager.model.ServerInfo;
-import com.kit.integrationmanager.payload.RegistrationStatus;
-import com.kit.integrationmanager.payload.ResponseHeader;
 import com.kit.integrationmanager.payload.login.callback.LoginCallBack;
 import com.kit.integrationmanager.payload.login.request.LoginRequest;
 import com.kit.integrationmanager.payload.login.response.LoginResponse;

@@ -1,17 +1,27 @@
 package com.kit.integrationmanager.payload.login.response;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.kit.integrationmanager.payload.ResponseHeader;
+
+import java.util.List;
 
 import lombok.Data;
 
 @Data
 public class LoginResponse extends ResponseHeader{
-    private String expiredIn;
-    private int id;
-    private String status;
-    private String token;
-    private String userName;
 
+    @JsonProperty("id")
+    private int id;
+    @JsonProperty("expiredIn")
+    private String expiredIn;
+    @JsonProperty("status")
+    private String status;
+    @JsonProperty("token")
+    private String token;
+    @JsonProperty("userName")
+    private String userName;
+    @JsonProperty("operations")
+    private List<String> operations;
 
     public String getExpiredIn() {
         return expiredIn;
