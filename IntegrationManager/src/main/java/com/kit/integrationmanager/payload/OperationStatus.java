@@ -1,6 +1,6 @@
 package com.kit.integrationmanager.payload;
 
-public enum RegistrationStatus {
+public enum OperationStatus {
     SUCCESS(1,0,""),
     FAILED(2,0,"");
 
@@ -8,7 +8,7 @@ public enum RegistrationStatus {
     private int errorCode;
     private String errorMsg;
 
-    private RegistrationStatus(int id,int errorCode,String errorMsg){
+    OperationStatus(int id, int errorCode, String errorMsg){
         this.id = id;
         this.errorCode = 0;
         this.errorMsg=null;

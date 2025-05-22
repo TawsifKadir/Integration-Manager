@@ -25,7 +25,9 @@ import com.kit.integrationmanager.payload.reconcile.response.PayrollReconcileBat
 import com.kit.integrationmanager.payload.reconcile.response.PayrollReconcileResponse;
 import com.kit.integrationmanager.payload.reset.request.ResetPassRequest;
 import com.kit.integrationmanager.payload.reset.response.ResetPassResponse;
+import com.kit.integrationmanager.payload.update.request.BeneficiaryUpdateStatusRequest;
 import com.kit.integrationmanager.payload.update.request.UpdateFullBeneficiaryRequest;
+import com.kit.integrationmanager.payload.update.response.BeneficiaryUpdateStatusResponse;
 import com.kit.integrationmanager.payload.update.response.CheckUpdateResponse;
 import com.kit.integrationmanager.payload.update.response.UpdateFullBeneficiaryResponse;
 
@@ -95,4 +97,7 @@ public interface APIInterface {
     @Headers({"READ_TIMEOUT:300", "WRITE_TIMEOUT:300"})
     @POST("/afis/api/beneficiary/update-full-beneficiary")
     Call<UpdateFullBeneficiaryResponse> updateFullBeneficiary(@Body UpdateFullBeneficiaryRequest updateFullBeneficiaryRequest, @HeaderMap Map<String, String> headers);
+    @Headers({"READ_TIMEOUT:300", "WRITE_TIMEOUT:300"})
+    @POST("/afis/api/beneficiary/update-status")
+    Call<List<BeneficiaryUpdateStatusResponse>> getBeneficiaryUpdateStatus(@Body BeneficiaryUpdateStatusRequest updateFullBeneficiaryRequest, @HeaderMap Map<String, String> headers);
 }

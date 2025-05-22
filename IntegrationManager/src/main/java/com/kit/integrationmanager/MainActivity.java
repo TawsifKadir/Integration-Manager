@@ -17,12 +17,16 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.kit.integrationmanager.model.Beneficiary;
 import com.kit.integrationmanager.model.BulkResponse;
 import com.kit.integrationmanager.model.ServerInfo;
+import com.kit.integrationmanager.payload.OperationStatus;
 import com.kit.integrationmanager.payload.download.request.BeneficiaryDownloadRequest;
 import com.kit.integrationmanager.payload.download.response.BeneficiaryDownloadResponse;
 import com.kit.integrationmanager.payload.login.callback.LoginCallBack;
 import com.kit.integrationmanager.payload.login.response.LoginResponse;
+import com.kit.integrationmanager.payload.update.BeneficiaryUpdateRequestBody;
 import com.kit.integrationmanager.payload.update.request.BeneficiaryUpdateRequestV2;
+import com.kit.integrationmanager.payload.update.request.BeneficiaryUpdateStatusRequest;
 import com.kit.integrationmanager.payload.update.request.UpdateFullBeneficiaryRequest;
+import com.kit.integrationmanager.payload.update.response.BeneficiaryUpdateStatusResponse;
 import com.kit.integrationmanager.service.BeneficiaryDownloadService;
 import com.kit.integrationmanager.service.BeneficiaryDownloadServiceImpl;
 import com.kit.integrationmanager.service.BeneficiaryUpdateService;
@@ -46,12 +50,15 @@ public class MainActivity extends AppCompatActivity {
     private HashMap<String, String> mHeaders;
     private ServerInfo mServerInfo;
     private String authToken;
+    List<BeneficiaryUpdateRequestBody> requestBodies;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+
+        requestBodies = new ArrayList<>();
 
         // Initialize UI components
         Button loginButton = findViewById(R.id.loginBtn);
@@ -71,7 +78,7 @@ public class MainActivity extends AppCompatActivity {
 
         // Set up button click listeners
         loginButton.setOnClickListener(v -> testLogin());
-        resetPasswordButton.setOnClickListener(v -> testResetPassword());
+        resetPasswordButton.setOnClickListener(v -> testGetBeneficiaryUpdateStatus());
         getBeneficiariesButton.setOnClickListener(v -> testUpdateBeneficiary());
     }
 
@@ -164,11 +171,50 @@ public class MainActivity extends AppCompatActivity {
                             // Handle successful response
                             int successCount = response.getSuccessCount();
                             List<BulkResponse> bulkResponse = response.getBulkResponse();
+                            for (BulkResponse response1 : bulkResponse){
+                                BeneficiaryUpdateRequestBody requestBody = new BeneficiaryUpdateRequestBody(response1.getApplicationId(), response1.getRequestId());
+                                requestBodies.add(requestBody);
+                            }
                             // Process the response
                         },
                         throwable -> {
                             // Handle error
                             throwable.printStackTrace();
+                        }
+                );
+    }
+
+    @SuppressLint("CheckResult")
+    private void testGetBeneficiaryUpdateStatus(){
+        BeneficiaryUpdateService updateService = new BeneficiaryUpdateServiceImpl(mServerInfo);
+
+        BeneficiaryUpdateStatusRequest request = new BeneficiaryUpdateStatusRequest(requestBodies);
+
+        for (BeneficiaryUpdateRequestBody request1 : request.getRequests()){
+            Log.d(TAG, "testGetBeneficiaryUpdateStatus() called " + request1.getApplicationId() + " resultId: " + request1.getRequestId());
+        }
+
+        updateService.getBeneficiaryUpdateStatus(request, mHeaders)
+                .subscribeOn(Schedulers.io()) // Network call on IO thread
+                .observeOn(AndroidSchedulers.mainThread()) // Handle result on UI thread
+                .subscribe(
+                        responseList -> {
+                            // Process the full list of responses
+                            for (BeneficiaryUpdateStatusResponse response : responseList) {
+                                Log.d("Response",
+                                        "App ID: " + response.getApplicationId() +
+                                                ", Status: " + response.getResult()
+                                );
+                            }
+
+                            // Or use directly
+                            if (responseList.get(0).getResult() == OperationStatus.SUCCESS) {
+                                // First item success handling
+                            }
+                        },
+                        error -> {
+                            // Handle error
+                            Toast.makeText(this, "Error: " + error.getMessage(), Toast.LENGTH_SHORT).show();
                         }
                 );
     }
