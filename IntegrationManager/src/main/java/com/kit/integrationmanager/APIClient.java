@@ -36,36 +36,61 @@ public class APIClient {
     private ServerInfo serverInfo;
     private String TAG = "APICLIENT";
 
-    Interceptor timeoutInterceptor = new Interceptor() {
+    Interceptor timeoutInterceptor = chain -> {
+        Request request = chain.request();
+
+        int connectTimeout = chain.connectTimeoutMillis();
+        int readTimeout = chain.readTimeoutMillis();
+        int writeTimeout = chain.writeTimeoutMillis();
+
+        String connectNew = request.header(CONNECT_TIMEOUT);
+        String readNew = request.header(READ_TIMEOUT);
+        String writeNew = request.header(WRITE_TIMEOUT);
+
+        if (!TextUtils.isEmpty(connectNew)) {
+            connectTimeout = Integer.valueOf(connectNew);
+        }
+        if (!TextUtils.isEmpty(readNew)) {
+            readTimeout = Integer.valueOf(readNew);
+        }
+        if (!TextUtils.isEmpty(writeNew)) {
+            writeTimeout = Integer.valueOf(writeNew);
+        }
+
+        return chain
+                .withConnectTimeout(connectTimeout, TimeUnit.SECONDS)
+                .withReadTimeout(readTimeout, TimeUnit.SECONDS)
+                .withWriteTimeout(writeTimeout, TimeUnit.SECONDS)
+                .proceed(request);
+    };
+
+    public static class RetryInterceptor implements Interceptor {
+        private final int maxRetry;
+
+        public RetryInterceptor(int maxRetry) {
+            this.maxRetry = maxRetry;
+        }
+
         @Override
         public Response intercept(Chain chain) throws IOException {
+            int tryCount = 0;
             Request request = chain.request();
+            Response response = null;
 
-            int connectTimeout = chain.connectTimeoutMillis();
-            int readTimeout = chain.readTimeoutMillis();
-            int writeTimeout = chain.writeTimeoutMillis();
-
-            String connectNew = request.header(CONNECT_TIMEOUT);
-            String readNew = request.header(READ_TIMEOUT);
-            String writeNew = request.header(WRITE_TIMEOUT);
-
-            if (!TextUtils.isEmpty(connectNew)) {
-                connectTimeout = Integer.valueOf(connectNew);
-            }
-            if (!TextUtils.isEmpty(readNew)) {
-                readTimeout = Integer.valueOf(readNew);
-            }
-            if (!TextUtils.isEmpty(writeNew)) {
-                writeTimeout = Integer.valueOf(writeNew);
+            while (tryCount < maxRetry) {
+                try {
+                    response = chain.proceed(request);
+                    if (response.isSuccessful()) return response;
+                } catch (IOException e) {
+                    if (tryCount >= maxRetry - 1) throw e;
+                }
+                tryCount++;
             }
 
-            return chain
-                    .withConnectTimeout(connectTimeout, TimeUnit.SECONDS)
-                    .withReadTimeout(readTimeout, TimeUnit.SECONDS)
-                    .withWriteTimeout(writeTimeout, TimeUnit.SECONDS)
-                    .proceed(request);
+            return response;
         }
-    };
+    }
+
 
     public APIClient() {
         this.serverInfo = null;
@@ -105,7 +130,7 @@ public class APIClient {
                 String server_url = apiClient.getServerInfo().getProtocol() + "://" + apiClient.getServerInfo().getHost_name() + ":" + apiClient.getServerInfo().getPort() + "/";
 
 
-                OkHttpClient httpClient = null;
+                OkHttpClient httpClient;
 
                 if(BuildConfig.isDebug) {
                     httpClient = new OkHttpClient.Builder()
@@ -115,6 +140,7 @@ public class APIClient {
                             .addInterceptor(timeoutInterceptor)
                             .addInterceptor(new DownloadProgressInterceptor())
                             .addInterceptor(logInterceptor)
+                            .addInterceptor(new RetryInterceptor(3))
                             .build();
                 }else{
                     httpClient = new OkHttpClient.Builder()
@@ -123,6 +149,7 @@ public class APIClient {
                             .readTimeout(DEFAULT_READ_TIMEOUT, TimeUnit.SECONDS)
                             .addInterceptor(timeoutInterceptor)
                             .addInterceptor(new DownloadProgressInterceptor())
+                            .addInterceptor(new RetryInterceptor(3))
                             .build();
                 }
 

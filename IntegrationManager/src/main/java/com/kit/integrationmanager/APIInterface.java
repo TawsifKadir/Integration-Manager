@@ -7,7 +7,6 @@ import com.kit.integrationmanager.payload.BatchRegistrationResponse;
 import com.kit.integrationmanager.payload.BatchRegistrationResponseV2;
 import com.kit.integrationmanager.payload.device.request.RegisterDeviceRequest;
 import com.kit.integrationmanager.payload.device.response.RegisterDeviceResponse;
-import com.kit.integrationmanager.payload.download.request.BeneficiaryDownloadRequest;
 import com.kit.integrationmanager.payload.download.request.PayrollLockRequest;
 import com.kit.integrationmanager.payload.download.response.BeneficiaryDownloadResponse;
 import com.kit.integrationmanager.payload.download.response.PayrollLockResponse;
@@ -31,7 +30,6 @@ import com.kit.integrationmanager.payload.update.response.BeneficiaryUpdateStatu
 import com.kit.integrationmanager.payload.update.response.CheckUpdateResponse;
 import com.kit.integrationmanager.payload.update.response.UpdateFullBeneficiaryResponse;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 

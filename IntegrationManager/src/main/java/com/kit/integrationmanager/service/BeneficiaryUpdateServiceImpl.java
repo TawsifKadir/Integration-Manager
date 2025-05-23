@@ -147,26 +147,6 @@ public class BeneficiaryUpdateServiceImpl implements BeneficiaryUpdateService {
         });
     }
 
-    private void handleStatusResponse(
-            Response<List<BeneficiaryUpdateStatusResponse>> response,
-            ObservableEmitter<List<BeneficiaryUpdateStatusResponse>> emitter
-    ) throws Exception {
-        if (response.isSuccessful()) {
-            List<BeneficiaryUpdateStatusResponse> body = response.body();
-            if (body != null) {
-                emitter.onNext(body);
-                emitter.onComplete();
-            } else {
-                emitter.onError(new RuntimeException("Empty response body"));
-            }
-        } else {
-            String errorMsg = response.errorBody() != null
-                    ? response.errorBody().string()
-                    : "Server error: " + response.code();
-            emitter.onError(new RuntimeException(errorMsg));
-        }
-    }
-
     @SuppressLint("LongLogTag")
     @Override
     public void cancelUpdate() {

@@ -171,6 +171,7 @@ public class MainActivity extends AppCompatActivity {
                             // Handle successful response
                             int successCount = response.getSuccessCount();
                             List<BulkResponse> bulkResponse = response.getBulkResponse();
+                            requestBodies = new ArrayList<>();
                             for (BulkResponse response1 : bulkResponse){
                                 BeneficiaryUpdateRequestBody requestBody = new BeneficiaryUpdateRequestBody(response1.getApplicationId(), response1.getRequestId());
                                 requestBodies.add(requestBody);
